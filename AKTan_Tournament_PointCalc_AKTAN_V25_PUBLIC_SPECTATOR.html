@@ -3332,7 +3332,7 @@ window.previewOCRImages=function(e){
 /* V26 Public Contest / Room Manager — V24 OCR is untouched. */
 (function(){
   const baseRenderAll=window.renderAll, baseRenderPublicApp=window.renderPublicApp, baseRegMode=window.publicRegModeChanged;
-  function formatInfo(f){const raw=String(f||'').toLowerCase().replace(/\s+/g,'');const m=raw.match(/([1-4])v\1/);if(m){const n=+m[1];return {mode:n===1?'solo':n===2?'duo':'squad',need:n,team:false}}if(raw==='solo')return {mode:'solo',need:1,team:false};if(raw==='duo')return {mode:'duo',need:2,team:false};if(raw==='squad')return {mode:'squad',need:4,team:false};return {mode:'squad',need:1,team:false}}
+  function formatInfo(f){const raw=String(f||'').toLowerCase().replace(/\s+/g,'');const m=raw.match(/([1-4])v\1/);if(m){const n=+m[1];return {mode:n===1?'solo':n===2?'duo':'squad',need:n,team:n>1}}if(raw==='solo')return {mode:'solo',need:1,team:false};if(raw==='duo')return {mode:'duo',need:2,team:true};if(raw==='squad')return {mode:'squad',need:4,team:true};return {mode:'squad',need:4,team:true}}
   function status(r){const n=countApproved(r),max=Math.max(1,+r.maxSlots||1);if(r.status==='Completed'||r.status==='Cancelled')return r.status;if(n>=max)return 'FULL';if(r.status==='Live')return 'LIVE';return 'UPCOMING'}
   function dateText(v){if(!v)return 'Time not set';try{return new Date(v).toLocaleString()}catch(e){return String(v)}}
   function renderAdminRooms(){const box=document.getElementById('publicRoomsList');if(!box)return;const a=ensureRooms();box.innerHTML=a.length?a.map(r=>{const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),thumb=r.thumbnail||'';return `<div class="notice" style="margin-top:9px">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="">`:''}<div style="display:flex;justify-content:space-between;gap:8px;margin-top:${thumb?'8px':'0'}"><div><b>🎮 ${escR(r.title)}</b><div class="small muted">${escR(r.category)} • ${escR(r.format)} • ${escR(r.map)}</div></div><b>${n}/${m}</b></div><div class="small" style="margin-top:6px">💰 Entry ₹${+r.entryFee||0} • 🏆 Prize ₹${+r.prizePool||0} • ⏰ ${escR(dateText(r.startAt))}</div><div class="small muted">${escR(status(r))}</div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full.')}</div></div><div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="editPublicRoom('${r.id}')">✏️ Edit</button><button onclick="duplicatePublicRoom('${r.id}')">📋 Duplicate</button><button class="danger" onclick="deletePublicRoom('${r.id}')">🗑️ Delete</button></div></div>`}).join(''):'<div class="empty">No public rooms yet.</div>'}
@@ -3766,6 +3766,43 @@ window.previewOCRImages=function(e){
 })();
 </script>
 
+<script id="AKTanTeamNameVisibilityFix">
+/* Team Name visibility: SOLO hidden; DUO / 3v3 / SQUAD visible and required. */
+(function(){
+  function getMode(){
+    const sel=document.getElementById('pubRegContest');
+    const id=sel?.value||'';
+    let raw='';
+    try{
+      const r=(typeof ensureRooms==='function'?ensureRooms():[]).find(x=>String(x.id)===String(id));
+      raw=String(r?.format||'');
+    }catch(e){}
+    raw=raw.toLowerCase().replace(/\s+/g,'');
+    const m=raw.match(/([1-4])v\1/);
+    if(m)return +m[1]===1?'solo':+m[1]===2?'duo':'squad';
+    if(raw==='solo')return 'solo';
+    if(raw==='duo')return 'duo';
+    if(raw==='squad')return 'squad';
+    return String(document.getElementById('pubRegMode')?.value||'squad').toLowerCase();
+  }
+  function apply(){
+    const wrap=document.getElementById('pubRegTeamWrap'), input=document.getElementById('pubRegTeam');
+    if(!wrap)return;
+    const solo=getMode()==='solo';
+    wrap.style.display=solo?'none':'block';
+    wrap.style.visibility=solo?'hidden':'visible';
+    wrap.hidden=solo;
+    if(!solo)wrap.removeAttribute('hidden');
+    if(input){input.required=!solo;input.disabled=solo;}
+  }
+  const oldRoom=window.publicRoomSelected;
+  window.publicRoomSelected=function(){if(typeof oldRoom==='function')oldRoom.apply(this,arguments);setTimeout(apply,0);};
+  const oldMode=window.publicRegModeChanged;
+  window.publicRegModeChanged=function(){if(typeof oldMode==='function')oldMode.apply(this,arguments);setTimeout(apply,0);};
+  document.addEventListener('change',e=>{if(e.target?.id==='pubRegContest'||e.target?.id==='pubRegMode')setTimeout(apply,0);},true);
+  setTimeout(apply,0);setTimeout(apply,200);setTimeout(apply,800);setTimeout(apply,1500);
+})();
+</script>
 </body>
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
