@@ -112,7 +112,7 @@ const server=http.createServer(async (req,res)=>{
       // For a combined format, allow the public form to submit whichever supported player count it displays.
       if(counts.length && !counts.includes(submittedCount))return json(res,400,{error:'This room accepts '+counts.map(n=>n+'v'+n).join(' or ')+'. Please fill the correct number of players.'});
       const mode=need===1?'solo':need===2?'duo':'squad';
-      const needsTeam=true; // V26.3: every room registration must carry an explicit Team Name.
+      const needsTeam=mode!=='solo'; // Team Name is required for DUO/3v3/SQUAD, not SOLO.
       const needsLogo=false;
       const needsPhone=true;
       if((needsTeam&&!team)||(needsPhone&&!phone)||submittedCount!==need||players.slice(0,need).some(x=>!x))return json(res,400,{error:'Please fill Team Name, all required player names and phone number for this room.'});
