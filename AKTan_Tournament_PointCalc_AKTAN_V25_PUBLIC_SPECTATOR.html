@@ -1405,6 +1405,11 @@ function printPrizePool(){
 }
 function getPrizeForPosition(rank){ensurePrize();return prizeAmount(S.prizePool.rewards.find(r=>r.type==='position'&&+r.position===+rank)||{})}
 function renderCertificateOptions(){let type=document.getElementById('certType'),sel=document.getElementById('certRank');if(!sel)return;let old=sel.value;if(type?.value==='award'){ensurePrize();sel.innerHTML=S.prizePool.rewards.filter(r=>r.type==='special').map(r=>`<option value="${r.id}">${esc(r.label||'Special Award')} — ₹${prizeAmount(r)}</option>`).join('')||'<option value="">No special awards</option>'}else sel.innerHTML='<option value="1">🥇 1st Place</option><option value="2">🥈 2nd Place</option><option value="3">🥉 3rd Place</option>';if([...sel.options].some(o=>o.value===old))sel.value=old}
+// Public room helpers are intentionally global because renderPublicApp and admin controls are global.
+function ensureRooms(){S.publicContests=Array.isArray(S.publicContests)?S.publicContests:[];return S.publicContests}
+function room(id){return ensureRooms().find(r=>String(r.id)===String(id))}
+function countApproved(r){return (S.teams||[]).filter(t=>String(t.contestId||'')===String(r?.id||'')).length}
+function escR(v){return typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function renderPublicApp(){
  let app=document.getElementById('publicApp');if(!app)return;ensurePrize();
  const pc=Object.assign({mode:'squad',logo:true,team:true,players:true,phone:true},S.publicRegistration||{});
@@ -3326,11 +3331,7 @@ window.previewOCRImages=function(e){
 /* V26 Public Contest / Room Manager — V24 OCR is untouched. */
 (function(){
   const baseRenderAll=window.renderAll, baseRenderPublicApp=window.renderPublicApp, baseRegMode=window.publicRegModeChanged;
-  function ensureRooms(){S.publicContests=Array.isArray(S.publicContests)?S.publicContests:[];return S.publicContests}
-  function escR(v){return typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-  function room(id){return ensureRooms().find(r=>r.id===id)}
   function formatInfo(f){const raw=String(f||'').toLowerCase().replace(/\s+/g,'');const m=raw.match(/([1-4])v\1/);if(m){const n=+m[1];return {mode:n===1?'solo':n===2?'duo':'squad',need:n,team:false}}if(raw==='solo')return {mode:'solo',need:1,team:false};if(raw==='duo')return {mode:'duo',need:2,team:false};if(raw==='squad')return {mode:'squad',need:4,team:false};return {mode:'squad',need:1,team:false}}
-  function countApproved(r){return (S.teams||[]).filter(t=>String(t.contestId||'')===String(r.id)).length}
   function status(r){const n=countApproved(r),max=Math.max(1,+r.maxSlots||1);if(r.status==='Completed'||r.status==='Cancelled')return r.status;if(n>=max)return 'FULL';if(r.status==='Live')return 'LIVE';return 'UPCOMING'}
   function dateText(v){if(!v)return 'Time not set';try{return new Date(v).toLocaleString()}catch(e){return String(v)}}
   function renderAdminRooms(){const box=document.getElementById('publicRoomsList');if(!box)return;const a=ensureRooms();box.innerHTML=a.length?a.map(r=>{const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),thumb=r.thumbnail||'';return `<div class="notice" style="margin-top:9px">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="">`:''}<div style="display:flex;justify-content:space-between;gap:8px;margin-top:${thumb?'8px':'0'}"><div><b>🎮 ${escR(r.title)}</b><div class="small muted">${escR(r.category)} • ${escR(r.format)} • ${escR(r.map)}</div></div><b>${n}/${m}</b></div><div class="small" style="margin-top:6px">💰 Entry ₹${+r.entryFee||0} • 🏆 Prize ₹${+r.prizePool||0} • ⏰ ${escR(dateText(r.startAt))}</div><div class="small muted">${escR(status(r))}</div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full.')}</div></div><div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="editPublicRoom('${r.id}')">✏️ Edit</button><button onclick="duplicatePublicRoom('${r.id}')">📋 Duplicate</button><button class="danger" onclick="deletePublicRoom('${r.id}')">🗑️ Delete</button></div></div>`}).join(''):'<div class="empty">No public rooms yet.</div>'}
