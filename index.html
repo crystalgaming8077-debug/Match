@@ -1405,7 +1405,6 @@ function printPrizePool(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
   w.document.close();
 }
@@ -1550,7 +1549,6 @@ function downloadCard(){let pt=getPrintTheme();
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),300);
@@ -1761,7 +1759,6 @@ function printCertificate(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
   w.document.close();
   setTimeout(()=>{w.print();document.body.classList.remove('certificate-printing')},400);
@@ -1858,7 +1855,6 @@ function printTeamsPoster(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),500);
@@ -2991,7 +2987,6 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
     w.document.close();
   };
@@ -3111,7 +3106,6 @@ window.printPrizePool=function(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
-
 </body></html>`);
   w.document.close();setTimeout(()=>w.print(),350);
 };
@@ -3533,48 +3527,249 @@ window.previewOCRImages=function(e){
 })();
 </script>
 
-<style id="AKTanPublicV28MotionAndRooms">
-#publicApp .publicTitle,#publicApp .publicHero h1,#publicApp .publicHero h2,#publicApp .publicMoney,#publicApp .publicHero .eyebrow{position:relative!important;display:inline-block!important;overflow:hidden!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important}
-#publicApp .publicTitle:after,#publicApp .publicHero h1:after,#publicApp .publicHero h2:after,#publicApp .publicMoney:after,#publicApp .publicHero .eyebrow:after{content:"";position:absolute;left:-35%;top:8%;width:18%;height:84%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),var(--pub-accent),transparent);filter:blur(1px) drop-shadow(0 0 7px var(--pub-accent));transform:skewX(-18deg);pointer-events:none;opacity:.9;animation:aktanTextSweep 2.8s linear infinite}
-@keyframes aktanTextSweep{0%{left:-35%;opacity:0}12%{opacity:.95}55%{opacity:.9}100%{left:115%;opacity:0}}
-#publicApp .v28RoomPanel{max-width:1120px;margin:14px auto;padding:14px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(145deg,rgba(20,27,41,.94),rgba(8,12,20,.96));box-shadow:0 16px 48px rgba(0,0,0,.28)}
-#publicApp .v28RoomPanelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-#publicApp .v28RoomPanelHead h2{margin:0}
-#publicApp .v28RoomCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-#publicApp .v28RoomCard{position:relative;overflow:hidden;padding:15px;border-radius:18px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,rgba(27,35,53,.9),rgba(9,14,24,.96));box-shadow:0 10px 30px rgba(0,0,0,.22)}
-#publicApp .v28RoomCard:before{content:"";position:absolute;left:-25%;top:0;width:35%;height:3px;background:linear-gradient(90deg,transparent,#fff,var(--pub-accent),transparent);filter:drop-shadow(0 0 8px var(--pub-accent));animation:aktanRoomSweep 2.5s linear infinite}
-@keyframes aktanRoomSweep{0%{left:-30%}100%{left:115%}}
-#publicApp .v28RoomTitle{font-size:18px;font-weight:1000;margin:0 0 4px}
-#publicApp .v28RoomMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-#publicApp .v28Stat{padding:10px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
-#publicApp .v28Stat b{display:block;font-size:19px;margin-top:2px}
-#publicApp .v28Actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-#publicApp .v28Actions button{min-height:42px!important;font-weight:900!important}
-#publicApp .v28Actions button.primary{box-shadow:0 0 18px var(--pub-glow)}
-#publicApp .v28Selected{border-color:var(--pub-accent)!important;box-shadow:0 0 0 1px var(--pub-accent),0 15px 42px var(--pub-glow)!important}
-@media(max-width:560px){#publicApp .v28RoomCards{grid-template-columns:1fr}#publicApp .v28Actions{grid-template-columns:1fr 1fr}#publicApp .v28Actions button:first-child{grid-column:1/-1}}
+<style id="AKTanPremiumPublicV28CSS">
+/* V28: public-only visual layer. No calculation/admin/print logic is changed. */
+#publicApp{position:relative;isolation:isolate;overflow-x:hidden;background:linear-gradient(145deg,#05070c,#0a0f1b 48%,#070a12)!important}
+#publicApp:before,#publicApp:after{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;opacity:.55}
+#publicApp:before{background:
+ radial-gradient(circle at 15% 20%,var(--pub-glow,#ffb00033),transparent 24%),
+ radial-gradient(circle at 85% 15%,rgba(124,92,255,.20),transparent 24%),
+ radial-gradient(circle at 55% 85%,rgba(0,210,255,.10),transparent 22%);
+ animation:aktanFloatGlow 16s ease-in-out infinite alternate}
+#publicApp:after{background:repeating-linear-gradient(115deg,transparent 0 90px,rgba(255,255,255,.018) 91px 92px,transparent 93px 170px);transform:translateX(-10%);animation:aktanEnergy 18s linear infinite}
+@keyframes aktanFloatGlow{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,2%,0) scale(1.05)}}
+@keyframes aktanEnergy{from{transform:translateX(-8%) translateY(0)}to{transform:translateX(8%) translateY(2%)}}
+#publicApp .publicTop{position:relative}
+#publicApp .publicHero{animation:aktanEnter .45s ease both}
+#publicApp .publicCard,#publicApp .premiumRoomCard{animation:aktanEnter .42s ease both}
+@keyframes aktanEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#publicApp .publicHero .eyebrow{color:var(--pub-accent,#ffb000);font-weight:900;letter-spacing:1.8px;font-size:11px}
+#publicApp .publicHero .heroStatusRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+#publicApp .liveIndicator{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:rgba(255,70,70,.10);border:1px solid rgba(255,90,90,.28);font-size:11px;font-weight:1000;letter-spacing:.8px}
+#publicApp .liveIndicator:before{content:"";width:8px;height:8px;border-radius:50%;background:#ff5151;box-shadow:0 0 12px #ff5151;animation:aktanPulse 1.35s infinite}
+@keyframes aktanPulse{50%{opacity:.35;transform:scale(.75)}}
+#publicApp .openIndicator{background:rgba(67,224,138,.09);border-color:rgba(67,224,138,.25);color:#75efaa}
+#publicApp .fullIndicator{background:rgba(255,100,80,.09);border-color:rgba(255,100,80,.25);color:#ff9b89}
+#publicApp .heroCta{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+#publicApp .heroCta button{min-height:46px;padding:11px 16px;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+#publicApp .heroCta .primary{box-shadow:0 0 25px var(--pub-glow,#ffb00033)}
+#publicApp .heroStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:18px}
+#publicApp .heroStat{padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+#publicApp .heroStat span{display:block;color:#9da9bf;font-size:10px;text-transform:uppercase;letter-spacing:.7px}
+#publicApp .heroStat b{display:block;font-size:19px;margin-top:4px}
+#publicApp .premiumRoomCard{background:linear-gradient(145deg,rgba(21,29,45,.95),rgba(8,13,22,.96));border:1px solid rgba(255,255,255,.09);border-radius:22px!important;padding:15px!important}
+#publicApp .premiumRoomCard:hover{transform:translateY(-4px);border-color:var(--pub-accent,#ffb000);box-shadow:0 18px 50px rgba(0,0,0,.34),0 0 30px var(--pub-glow,#ffb00022)}
+#publicApp .roomStatusBadge{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-size:10px;font-weight:1000;letter-spacing:.8px}
+#publicApp .roomStatusBadge.open{color:#79f1ae;background:rgba(67,224,138,.09);border:1px solid rgba(67,224,138,.22)}
+#publicApp .roomStatusBadge.full{color:#ff9b89;background:rgba(255,90,70,.09);border:1px solid rgba(255,90,70,.22)}
+#publicApp .roomStatusBadge.live{color:#ff8c8c;background:rgba(255,70,70,.09);border:1px solid rgba(255,70,70,.24)}
+#publicApp .roomStatGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:13px}
+#publicApp .roomStat{padding:10px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)}
+#publicApp .roomStat .v{display:block;font-size:18px;font-weight:1000;margin-top:3px}
+#publicApp .roomProgress{height:7px;border-radius:99px;background:#0b111b;overflow:hidden;border:1px solid rgba(255,255,255,.06);margin-top:10px}
+#publicApp .roomProgress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pub-accent,#ffb000),var(--pub-accent2,#ff6b00));box-shadow:0 0 15px var(--pub-glow,#ffb00033);transition:width .7s ease}
+#publicApp .roomActions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+#publicApp .roomActions button{min-height:42px}
+#publicApp .premiumPodium{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:9px;margin:0 0 14px}
+#publicApp .premiumPodium .premiumPod{padding:16px 10px;text-align:center;border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.09);box-shadow:0 12px 30px rgba(0,0,0,.18)}
+#publicApp .premiumPodium .premiumPod:first-child,#publicApp .premiumPodium .premiumPod:nth-child(3){transform:translateY(10px)}
+#publicApp .premiumPodium .premiumPod:nth-child(2){transform:translateY(-2px)}
+#publicApp .premiumPodium img{width:64px;height:64px;border-radius:16px;object-fit:cover;border:1px solid rgba(255,255,255,.12);margin:7px auto}
+#publicApp .premiumPodium .podRank{font-weight:1000;font-size:12px;letter-spacing:1px}
+#publicApp .premiumPodium .podPts{font-size:24px;font-weight:1000;color:#ffd36b}
+#publicApp .publicTeamPlayers{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+#publicApp .publicTeamPlayers span{padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);font-size:10px;color:#c8d0df}
+#publicApp .slotState{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border-radius:13px;background:linear-gradient(100deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.07);margin-bottom:8px}
+#publicApp .slotState.filled{border-color:rgba(67,224,138,.16)}
+#publicApp .slotState.empty{opacity:.8}
+#publicApp .ruleAccordion{border:1px solid rgba(255,255,255,.08);border-radius:15px;background:rgba(255,255,255,.025);margin-bottom:8px;overflow:hidden}
+#publicApp .ruleAccordion summary{cursor:pointer;list-style:none;padding:13px 14px;font-weight:900}
+#publicApp .ruleAccordion summary::-webkit-details-marker{display:none}
+#publicApp .ruleAccordion .ruleBody{padding:0 14px 14px;color:#c5cedc;white-space:pre-wrap;line-height:1.55;font-size:13px}
+#publicApp .roomSelectedBar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;margin:0 auto 12px;max-width:1120px;background:rgba(255,255,255,.035);border:1px solid rgba(255,176,0,.13)}
+#publicApp .roomSelectedBar b{font-size:14px}
+#publicApp .countUp{font-variant-numeric:tabular-nums}
+@media(max-width:650px){
+ #publicApp .heroStats{grid-template-columns:1fr 1fr}
+ #publicApp .roomStatGrid{grid-template-columns:1fr 1fr}
+ #publicApp .roomActions{grid-template-columns:1fr}
+ #publicApp .premiumPodium{grid-template-columns:1fr}
+ #publicApp .premiumPodium .premiumPod:first-child,#publicApp .premiumPodium .premiumPod:nth-child(3),#publicApp .premiumPodium .premiumPod:nth-child(2){transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ #publicApp:before,#publicApp:after,#publicApp .liveIndicator:before{animation:none}
+ #publicApp .publicHero,#publicApp .publicCard,#publicApp .premiumRoomCard{animation:none}
+}
 </style>
-<script id="AKTanPublicV28RoomsTeamsSlots">
+
+
+<script id="AKTanPremiumPublicV28JS">
 (function(){
-  function e(v){return typeof escR==='function'?escR(v):(typeof esc==='function'?esc(v):String(v??''));}
-  function rooms(){return typeof ensureRooms==='function'?ensureRooms():(Array.isArray(S.publicContests)?S.publicContests:[]);}
-  function teamsFor(id){return id?((S.teams||[]).filter(t=>String(t.contestId||'')===String(id))):(S.teams||[]);}
-  function goRoom(id,page){window.__aktanPublicRoomId=id||'all';S.publicSelectedRoom=id||'';S.publicLeaderboardContestId=id||'';if(typeof save==='function')save();if(typeof renderPublicApp==='function')renderPublicApp();if(typeof renderPremiumPublicV27==='function')renderPremiumPublicV27();if(page&&typeof publicSection==='function')publicSection(page);setTimeout(function(){var s=document.getElementById('pubPublicRoomSelect');if(s)s.value=id||'';},20);}
-  window.aktanV28Room=goRoom;
-  function renderHomeRooms(){
-    var home=document.getElementById('pubHome');if(!home)return;var old=document.getElementById('v28HomeRooms');if(old)old.remove();var rs=rooms();var panel=document.createElement('div');panel.id='v28HomeRooms';panel.className='v28RoomPanel';
-    if(!rs.length){panel.innerHTML='<div class="v28RoomPanelHead"><h2>🎮 Rooms</h2></div><div class="publicEmpty">No rooms are available yet.</div>';home.appendChild(panel);return;}
-    var selected=window.__aktanPublicRoomId||S.publicSelectedRoom||'all';
-    panel.innerHTML='<div class="v28RoomPanelHead"><h2>🎮 Select Room</h2><div class="small muted">Choose any room to see registered teams, slots and leaderboard.</div></div><div class="v28RoomCards">'+rs.map(function(r){
-      var ts=teamsFor(r.id),total=Math.max(1,+r.maxSlots||1),left=Math.max(0,total-ts.length),full=left===0;
-      return '<div class="v28RoomCard '+(selected===r.id?'v28Selected':'')+'"><div class="eyebrow">'+e(r.category||'ROOM')+'</div><div class="v28RoomTitle">'+e(r.title||'Room')+'</div><div class="small muted">'+e(r.format||'')+(r.map?' • '+e(r.map):'')+'</div><div class="v28RoomMeta"><div class="v28Stat"><span class="small muted">Teams Registered</span><b>👥 '+ts.length+'</b></div><div class="v28Stat"><span class="small muted">Slots Available</span><b>🎟️ '+left+' / '+total+'</b></div></div><div class="notice" style="margin-top:10px"><b>'+(full?'🔒 Room Full':'🟢 '+left+' slots available')+'</b></div><div class="v28Actions"><button onclick="aktanV28Room(\''+e(r.id)+'\',\'pubTeamsPage\')">👥 Teams ('+ts.length+')</button><button onclick="aktanV28Room(\''+e(r.id)+'\',\'pubSlots\')">🎟️ Slots ('+left+')</button><button class="primary" onclick="aktanV28Room(\''+e(r.id)+'\',\'pubRank\')">🏆 Leaderboard</button></div></div>';
-    }).join('')+'</div>';home.appendChild(panel);
+  const escv=v=>typeof esc==='function'?esc(v):String(v??'');
+  const rooms=()=>typeof ensureRooms==='function'?ensureRooms():[];
+  const roomBy=id=>rooms().find(r=>String(r.id)===String(id));
+  const teamsFor=id=>id?(S.teams||[]).filter(t=>String(t.contestId||'')===String(id)):(S.teams||[]);
+  const countFor=r=>typeof countApproved==='function'?countApproved(r):teamsFor(r?.id).length;
+  const maxFor=r=>Math.max(1,+r?.maxSlots||1);
+  const pct=(n,m)=>Math.min(100,Math.round((n/m)*100));
+  const roomStatus=r=>typeof status==='function'?String(status(r)||'OPEN').toUpperCase():'OPEN';
+  const isFull=r=>countFor(r)>=maxFor(r);
+  const isLive=r=>roomStatus(r)==='LIVE';
+  const selectedId=()=>window.__aktanPublicRoomId && window.__aktanPublicRoomId!=='all'?window.__aktanPublicRoomId:(S.publicSelectedRoom||'');
+  const selectedTeams=()=>teamsFor(selectedId());
+
+  function setRoom(id){
+    window.__aktanPublicRoomId=id||'all';
+    S.publicSelectedRoom=id||'';
+    S.publicLeaderboardContestId=id||'';
+    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+    renderAllPublicV28();
   }
-  var oldRPA=window.renderPublicApp;window.renderPublicApp=function(){if(typeof oldRPA==='function')oldRPA.apply(this,arguments);setTimeout(renderHomeRooms,0);};
-  var oldPS=window.publicSection;window.publicSection=function(id){if(typeof oldPS==='function')oldPS.apply(this,arguments);if(id==='pubHome')setTimeout(renderHomeRooms,0);};
-  setTimeout(renderHomeRooms,100);window.addEventListener('load',function(){setTimeout(renderHomeRooms,200);});
+
+  function renderHero(){
+    const hero=document.querySelector('#pubHome .publicHero'); if(!hero)return;
+    const r=roomBy(selectedId()), ts=selectedId()?selectedTeams():(S.teams||[]);
+    const n=r?countFor(r):ts.length, m=r?maxFor(r):Math.max(1,ts.length);
+    const statusText=r?(isFull(r)?'FULL':(isLive(r)?'LIVE':'OPEN')):((S.schedule||[]).some(x=>x.status==='Live')?'LIVE':'OPEN');
+    let cta=hero.querySelector('.heroCta');
+    if(!cta){cta=document.createElement('div');cta.className='heroCta';hero.appendChild(cta)}
+    cta.innerHTML=`<button class="primary" onclick="window.__aktanV28Register()">📝 Register Now</button>
+      <button onclick="publicSection('pubRank')">🏆 Leaderboard</button>
+      <button onclick="publicSection('pubContests')">🎮 View Rooms</button>`;
+    let sr=hero.querySelector('.heroStatusRow');
+    if(!sr){sr=document.createElement('div');sr.className='heroStatusRow';hero.insertBefore(sr,cta)}
+    sr.innerHTML=`<span class="liveIndicator ${statusText==='OPEN'?'openIndicator':''} ${statusText==='FULL'?'fullIndicator':''}">${statusText}</span>
+      <span class="premiumRoomTag">${r?'🎮 '+escv(r.title):'🌐 All Rooms'}</span>`;
+    let hs=hero.querySelector('.heroStats');
+    if(!hs){hs=document.createElement('div');hs.className='heroStats';hero.appendChild(hs)}
+    hs.innerHTML=`<div class="heroStat"><span>Teams Registered</span><b class="countUp">${n}</b></div>
+      <div class="heroStat"><span>Slots Available</span><b class="countUp">${r?Math.max(0,m-n):'—'}</b></div>
+      <div class="heroStat"><span>Matches</span><b>${+S.matches||0}</b></div>
+      <div class="heroStat"><span>Prize Pool</span><b>₹${r?(+r.prizePool||0):officialPrizePool()}</b></div>`;
+  }
+
+  window.__aktanV28Register=function(){
+    const r=roomBy(selectedId());
+    if(r && !isFull(r) && typeof registerForPublicRoom==='function'){registerForPublicRoom(r.id);return;}
+    publicSection('pubRegister');
+  };
+
+  function renderRooms(){
+    const box=document.getElementById('pubContestsBox');if(!box)return;
+    const a=rooms();
+    box.innerHTML=a.length?a.map((r,i)=>{
+      const n=countFor(r),m=maxFor(r),left=Math.max(0,m-n),full=left===0,live=isLive(r);
+      const st=full?'FULL':live?'LIVE':'OPEN', p=pct(n,m), active=String(r.id)===String(selectedId());
+      return `<article class="publicCard premiumRoomCard" style="animation-delay:${Math.min(i*35,280)}ms">
+        <div class="roomGlow"></div>
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div style="min-width:0"><div class="eyebrow">${escv(r.category||'TOURNAMENT ROOM')}</div>
+          <h2 style="margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escv(r.title)}</h2>
+          <div class="muted small">${escv(r.format||'')}${r.map?' • '+escv(r.map):''}</div></div>
+          <span class="roomStatusBadge ${st.toLowerCase()}">${st==='LIVE'?'🔴 ':st==='OPEN'?'🟢 ':'🔒 '}${st}</span>
+        </div>
+        ${r.thumbnail?`<img class="publicRoomThumb" src="${escv(r.thumbnail)}" alt="${escv(r.title)}">`:''}
+        <div class="roomStatGrid">
+          <div class="roomStat"><span class="muted small">Prize Pool</span><b class="v">₹${+r.prizePool||0}</b></div>
+          <div class="roomStat"><span class="muted small">Entry Fee</span><b class="v">₹${+r.entryFee||0}</b></div>
+          <div class="roomStat"><span class="muted small">Teams Registered</span><b class="v">${n}</b></div>
+          <div class="roomStat"><span class="muted small">Slots Available</span><b class="v">${left}</b></div>
+        </div>
+        <div class="roomProgress" aria-label="${n} of ${m} slots filled"><i style="width:${p}%"></i></div>
+        <div class="small muted" style="margin-top:5px">${n}/${m} slots filled</div>
+        <div class="roomActions">
+          <button onclick="window.__aktanV28SelectRoom('${escv(r.id)}');publicSection('pubTeamsPage')">👥 VIEW TEAMS</button>
+          <button onclick="window.__aktanV28SelectRoom('${escv(r.id)}');publicSection('pubSlots')">🎟️ VIEW SLOTS</button>
+          <button onclick="window.__aktanV28SelectRoom('${escv(r.id)}');publicSection('pubRank')">🏆 LEADERBOARD</button>
+        </div>
+        <button class="primary" style="margin-top:9px;width:100%" ${full?'disabled':''} onclick="window.__aktanV28SelectRoom('${escv(r.id)}');window.__aktanV28Register()">${full?'🔒 ROOM FULL':'📝 REGISTER NOW'}</button>
+        ${active?'<div class="small" style="margin-top:8px;color:#ffd36b;font-weight:800">✓ Selected room — all public sections follow this room</div>':''}
+      </article>`;
+    }).join(''):'<div class="publicEmpty">No public rooms are available yet.</div>';
+  }
+  window.__aktanV28SelectRoom=function(id){
+    if(typeof setPublicRoom==='function')setPublicRoom(id);else setRoom(id);
+  };
+
+  function roomBar(sectionId,targetId){
+    const sec=document.getElementById(sectionId);if(!sec)return;
+    let bar=document.getElementById(targetId);
+    if(!bar){bar=document.createElement('div');bar.id=targetId;bar.className='roomSelectedBar';sec.insertBefore(bar,sec.querySelector('.publicTable,.publicGrid,.publicHero')||sec.lastElementChild)}
+    const r=roomBy(selectedId());
+    if(r){const n=countFor(r),m=maxFor(r);bar.innerHTML=`<div><b>🎮 ${escv(r.title)}</b><div class="small muted">${n}/${m} teams registered • ${Math.max(0,m-n)} slots available</div></div><button onclick="window.__aktanV28SelectRoom('');">🌐 All Rooms</button>`}
+    else bar.innerHTML=`<div><b>🌐 All Rooms</b><div class="small muted">Select a room to filter this section.</div></div>`;
+  }
+
+  function renderRank(){
+    const box=document.getElementById('pubRankBox');if(!box)return;
+    const ts=selectedTeams();
+    const st=stats().filter(x=>ts.some(t=>t.id===x.t.id));
+    const top=st.slice(0,3);
+    const podium=top.length?`<div class="premiumPodium">${[top[1],top[0],top[2]].filter(Boolean).map((x,idx)=>{
+      const rank=x===top[0]?1:x===top[1]?2:3;
+      return `<div class="premiumPod"><div class="podRank">${rank===1?'🥇 #1':rank===2?'🥈 #2':'🥉 #3'}</div><img src="${x.t.logo||brandFallback()}"><b>${escv(x.t.name)}</b><div class="podPts">${x.total}</div><div class="small muted">${x.kills} kill pts • ${x.place} placement</div></div>`;
+    }).join('')}</div>`:'';
+    const rows=st.slice(3).map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+4}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}"><div><b>${escv(x.t.name)}</b><div class="muted small">${x.kills} kill pts • ${x.place} placement</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join('');
+    box.innerHTML=podium+(rows||(!top.length?'<div class="publicEmpty">No registered teams found for this room yet.</div>':''));
+    roomBar('pubRank','v28RankRoom');
+  }
+
+  function renderTeams(){
+    const box=document.getElementById('pubTeamsBox');if(!box)return;
+    const ts=selectedTeams();
+    box.innerHTML=ts.length?ts.map(t=>`<div class="publicCard publicClick" onclick="openPublicTeamProfile('${escv(t.id)}')"><div class="publicTeam"><img src="${t.logo||brandFallback()}"><div style="min-width:0"><b>${escv(t.name)}</b><div class="muted small">Captain: ${escv(t.captain||'—')}</div><div class="publicTeamPlayers">${(t.players||[]).filter(Boolean).map(p=>`<span>${escv(p)}</span>`).join('')}</div></div></div></div>`).join(''):'<div class="publicEmpty">No teams are registered in the selected room yet.</div>';
+    roomBar('pubTeamsPage','v28TeamsRoom');
+  }
+
+  function renderSlots(){
+    const box=document.getElementById('pubSlotsBox');if(!box)return;
+    const r=roomBy(selectedId()),ts=selectedTeams(),m=r?maxFor(r):Math.max(12,ts.length);
+    box.innerHTML=Array.from({length:m},(_,i)=>{const t=ts[i];return `<div class="slotState ${t?'filled':'empty'}"><span>${t?'🟢':'⚪'} <b>Slot ${i+1}</b> — ${t?escv(t.name):'Available'}</span><span class="small">${t?'REGISTERED':'OPEN'}</span></div>`}).join('');
+    roomBar('pubSlots','v28SlotsRoom');
+  }
+
+  function renderRules(){
+    const box=document.getElementById('pubRulesBox');if(!box)return;
+    const r=roomBy(selectedId());
+    if(r && r.rules){
+      const parts=String(r.rules).split(/\n\s*\n/).filter(Boolean);
+      box.innerHTML=parts.map((x,i)=>`<details class="ruleAccordion" ${i===0?'open':''}><summary>📖 Rule ${i+1}</summary><div class="ruleBody">${escv(x)}</div></details>`).join('');
+    }else{
+      const rules=[...document.querySelectorAll('#rulebook .ruleSection .editable')];
+      box.innerHTML=rules.length?rules.map((x,i)=>`<details class="ruleAccordion" ${i===0?'open':''}><summary>📖 Section ${i+1}</summary><div class="ruleBody">${escv(x.value||x.textContent||'')}</div></details>`).join(''):'<div class="publicEmpty">Rules not configured.</div>';
+    }
+    roomBar('pubRules','v28RulesRoom');
+  }
+
+
+  const V28_STORE_KEY='AKTAN_POINTCALC_V3_CLEAN';
+  window.setPublicRoom=function(v){
+    S.publicSelectedRoom=v||'';
+    S.publicLeaderboardContestId=S.publicSelectedRoom;
+    window.__aktanPublicRoomId=S.publicSelectedRoom||'all';
+    try{localStorage.setItem(V28_STORE_KEY,JSON.stringify(S));}catch(e){}
+    renderPublicApp();
+    if(typeof window.renderPremiumPublicV27==='function')window.renderPremiumPublicV27();
+  };
+
+  function renderAllPublicV28(){
+    renderHero();renderRooms();renderRank();renderTeams();renderSlots();renderRules();
+  }
+
+  const oldRPA=window.renderPublicApp;
+  window.renderPublicApp=function(){
+    if(typeof oldRPA==='function')oldRPA.apply(this,arguments);
+    setTimeout(renderAllPublicV28,0);
+  };
+  const oldSec=window.publicSection;
+  window.publicSection=function(id){
+    if(typeof oldSec==='function')oldSec.apply(this,arguments);
+    setTimeout(renderAllPublicV28,0);
+  };
+  setTimeout(renderAllPublicV28,80);
 })();
 </script>
+
 </body>
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
