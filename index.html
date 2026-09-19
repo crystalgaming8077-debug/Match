@@ -1405,6 +1405,7 @@ function printPrizePool(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();
 }
@@ -1549,6 +1550,7 @@ function downloadCard(){let pt=getPrintTheme();
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),300);
@@ -1759,6 +1761,7 @@ function printCertificate(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();
   setTimeout(()=>{w.print();document.body.classList.remove('certificate-printing')},400);
@@ -1855,6 +1858,7 @@ function printTeamsPoster(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),500);
@@ -2987,6 +2991,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
     w.document.close();
   };
@@ -3106,6 +3111,7 @@ window.printPrizePool=function(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();setTimeout(()=>w.print(),350);
 };
@@ -3524,6 +3530,49 @@ window.previewOCRImages=function(e){
   setTimeout(function(){addRoomHeroes();addSelectBars();renderPremiumPublicV27();},50);
   const obs=new MutationObserver(function(){addRoomHeroes();});
   obs.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+
+<style id="AKTanPublicV28MotionAndRooms">
+#publicApp .publicTitle,#publicApp .publicHero h1,#publicApp .publicHero h2,#publicApp .publicMoney,#publicApp .publicHero .eyebrow{position:relative!important;display:inline-block!important;overflow:hidden!important;color:inherit!important;-webkit-text-fill-color:currentColor!important;background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important}
+#publicApp .publicTitle:after,#publicApp .publicHero h1:after,#publicApp .publicHero h2:after,#publicApp .publicMoney:after,#publicApp .publicHero .eyebrow:after{content:"";position:absolute;left:-35%;top:8%;width:18%;height:84%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),var(--pub-accent),transparent);filter:blur(1px) drop-shadow(0 0 7px var(--pub-accent));transform:skewX(-18deg);pointer-events:none;opacity:.9;animation:aktanTextSweep 2.8s linear infinite}
+@keyframes aktanTextSweep{0%{left:-35%;opacity:0}12%{opacity:.95}55%{opacity:.9}100%{left:115%;opacity:0}}
+#publicApp .v28RoomPanel{max-width:1120px;margin:14px auto;padding:14px;border-radius:22px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(145deg,rgba(20,27,41,.94),rgba(8,12,20,.96));box-shadow:0 16px 48px rgba(0,0,0,.28)}
+#publicApp .v28RoomPanelHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+#publicApp .v28RoomPanelHead h2{margin:0}
+#publicApp .v28RoomCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#publicApp .v28RoomCard{position:relative;overflow:hidden;padding:15px;border-radius:18px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,rgba(27,35,53,.9),rgba(9,14,24,.96));box-shadow:0 10px 30px rgba(0,0,0,.22)}
+#publicApp .v28RoomCard:before{content:"";position:absolute;left:-25%;top:0;width:35%;height:3px;background:linear-gradient(90deg,transparent,#fff,var(--pub-accent),transparent);filter:drop-shadow(0 0 8px var(--pub-accent));animation:aktanRoomSweep 2.5s linear infinite}
+@keyframes aktanRoomSweep{0%{left:-30%}100%{left:115%}}
+#publicApp .v28RoomTitle{font-size:18px;font-weight:1000;margin:0 0 4px}
+#publicApp .v28RoomMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+#publicApp .v28Stat{padding:10px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
+#publicApp .v28Stat b{display:block;font-size:19px;margin-top:2px}
+#publicApp .v28Actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+#publicApp .v28Actions button{min-height:42px!important;font-weight:900!important}
+#publicApp .v28Actions button.primary{box-shadow:0 0 18px var(--pub-glow)}
+#publicApp .v28Selected{border-color:var(--pub-accent)!important;box-shadow:0 0 0 1px var(--pub-accent),0 15px 42px var(--pub-glow)!important}
+@media(max-width:560px){#publicApp .v28RoomCards{grid-template-columns:1fr}#publicApp .v28Actions{grid-template-columns:1fr 1fr}#publicApp .v28Actions button:first-child{grid-column:1/-1}}
+</style>
+<script id="AKTanPublicV28RoomsTeamsSlots">
+(function(){
+  function e(v){return typeof escR==='function'?escR(v):(typeof esc==='function'?esc(v):String(v??''));}
+  function rooms(){return typeof ensureRooms==='function'?ensureRooms():(Array.isArray(S.publicContests)?S.publicContests:[]);}
+  function teamsFor(id){return id?((S.teams||[]).filter(t=>String(t.contestId||'')===String(id))):(S.teams||[]);}
+  function goRoom(id,page){window.__aktanPublicRoomId=id||'all';S.publicSelectedRoom=id||'';S.publicLeaderboardContestId=id||'';if(typeof save==='function')save();if(typeof renderPublicApp==='function')renderPublicApp();if(typeof renderPremiumPublicV27==='function')renderPremiumPublicV27();if(page&&typeof publicSection==='function')publicSection(page);setTimeout(function(){var s=document.getElementById('pubPublicRoomSelect');if(s)s.value=id||'';},20);}
+  window.aktanV28Room=goRoom;
+  function renderHomeRooms(){
+    var home=document.getElementById('pubHome');if(!home)return;var old=document.getElementById('v28HomeRooms');if(old)old.remove();var rs=rooms();var panel=document.createElement('div');panel.id='v28HomeRooms';panel.className='v28RoomPanel';
+    if(!rs.length){panel.innerHTML='<div class="v28RoomPanelHead"><h2>🎮 Rooms</h2></div><div class="publicEmpty">No rooms are available yet.</div>';home.appendChild(panel);return;}
+    var selected=window.__aktanPublicRoomId||S.publicSelectedRoom||'all';
+    panel.innerHTML='<div class="v28RoomPanelHead"><h2>🎮 Select Room</h2><div class="small muted">Choose any room to see registered teams, slots and leaderboard.</div></div><div class="v28RoomCards">'+rs.map(function(r){
+      var ts=teamsFor(r.id),total=Math.max(1,+r.maxSlots||1),left=Math.max(0,total-ts.length),full=left===0;
+      return '<div class="v28RoomCard '+(selected===r.id?'v28Selected':'')+'"><div class="eyebrow">'+e(r.category||'ROOM')+'</div><div class="v28RoomTitle">'+e(r.title||'Room')+'</div><div class="small muted">'+e(r.format||'')+(r.map?' • '+e(r.map):'')+'</div><div class="v28RoomMeta"><div class="v28Stat"><span class="small muted">Teams Registered</span><b>👥 '+ts.length+'</b></div><div class="v28Stat"><span class="small muted">Slots Available</span><b>🎟️ '+left+' / '+total+'</b></div></div><div class="notice" style="margin-top:10px"><b>'+(full?'🔒 Room Full':'🟢 '+left+' slots available')+'</b></div><div class="v28Actions"><button onclick="aktanV28Room(\''+e(r.id)+'\',\'pubTeamsPage\')">👥 Teams ('+ts.length+')</button><button onclick="aktanV28Room(\''+e(r.id)+'\',\'pubSlots\')">🎟️ Slots ('+left+')</button><button class="primary" onclick="aktanV28Room(\''+e(r.id)+'\',\'pubRank\')">🏆 Leaderboard</button></div></div>';
+    }).join('')+'</div>';home.appendChild(panel);
+  }
+  var oldRPA=window.renderPublicApp;window.renderPublicApp=function(){if(typeof oldRPA==='function')oldRPA.apply(this,arguments);setTimeout(renderHomeRooms,0);};
+  var oldPS=window.publicSection;window.publicSection=function(id){if(typeof oldPS==='function')oldPS.apply(this,arguments);if(id==='pubHome')setTimeout(renderHomeRooms,0);};
+  setTimeout(renderHomeRooms,100);window.addEventListener('load',function(){setTimeout(renderHomeRooms,200);});
 })();
 </script>
 </body>
