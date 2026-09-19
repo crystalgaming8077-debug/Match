@@ -1175,7 +1175,8 @@ window.quickReadScreenshot=async function(q){
 #publicApp .publicHero,#publicApp .publicCard,#publicApp .publicSelectBar{position:relative;overflow:hidden}
 #publicApp .publicHero:before,#publicApp .publicCard:before,#publicApp .publicSelectBar:before{content:"";position:absolute;top:0;left:-35%;width:24%;height:2px;background:linear-gradient(90deg,transparent,#fff,var(--pub-accent),transparent);filter:drop-shadow(0 0 7px var(--pub-accent));animation:pubScan 3.6s linear infinite;pointer-events:none}
 #publicApp .publicHero:after{background:radial-gradient(circle,var(--pub-glow),transparent 65%)!important}
-#publicApp .publicTitle,#publicApp h1,#publicApp h2,#publicApp h3,#publicApp h4,#publicApp b,#publicApp strong,#publicApp .eyebrow,#publicApp .publicMoney,#publicApp .publicTeam,#publicApp .publicCard,#publicApp .publicBottom button{background-image:linear-gradient(100deg,currentColor 0%,currentColor 38%,#fff 50%,currentColor 62%,currentColor 100%);background-size:240% 100%;background-position:120% 0;background-clip:text;-webkit-background-clip:text;color:transparent;animation:pubTextShine 5.2s ease-in-out infinite}
+/* Keep every word readable: animation is a subtle glow, not a disappearing/transparent text sweep. */
+#publicApp .publicTitle,#publicApp h1,#publicApp h2,#publicApp h3,#publicApp h4,#publicApp b,#publicApp strong,#publicApp .eyebrow,#publicApp .publicMoney{animation:pubTextGlow 3.2s ease-in-out infinite;will-change:text-shadow}
 #publicApp .publicMoney{filter:drop-shadow(0 0 10px var(--pub-glow));}
 #publicApp .publicCard:hover{transform:translateY(-4px) scale(1.005)!important;border-color:var(--pub-accent)!important;box-shadow:0 12px 40px var(--pub-glow)!important}
 #publicApp .publicBottom button.active{color:var(--pub-accent)!important;text-shadow:0 0 15px var(--pub-glow)}
@@ -1183,7 +1184,7 @@ window.quickReadScreenshot=async function(q){
 #publicApp .premiumRoomCard .roomGlow{background:linear-gradient(90deg,var(--pub-accent),var(--pub-accent2),#fff,var(--pub-accent));background-size:250% 100%;animation:pubBar 2.8s linear infinite}
 #publicApp .premiumRankNo,#publicApp .premiumPoints{color:var(--pub-accent)!important}
 @keyframes pubScan{0%{left:-35%;opacity:0}12%{opacity:1}55%{opacity:1}100%{left:110%;opacity:0}}
-@keyframes pubTextShine{0%,58%{background-position:120% 0}76%{background-position:0% 0}100%{background-position:-120% 0}}
+@keyframes pubTextGlow{0%,100%{text-shadow:0 0 0 transparent,0 0 7px var(--pub-glow)}50%{text-shadow:0 0 2px currentColor,0 0 15px var(--pub-glow)}}
 @keyframes pubBar{0%{background-position:0% 0}100%{background-position:250% 0}}
 @media(prefers-reduced-motion:reduce){#publicApp *,#publicApp *:before,#publicApp *:after{animation:none!important;transition:none!important}}
 </style>
@@ -1431,9 +1432,9 @@ function renderPublicApp(){
  let sl=document.getElementById('pubSlotsBox');if(sl){const r=room(selected),max=r?Math.max(1,+r.maxSlots||1):Math.max(12,teams.length);sl.innerHTML=Array.from({length:max},(_,i)=>{let t=teams[i];return `<div class="publicReward"><span>${t?'🟢':'⚪'} Slot ${i+1} — ${t?esc(t.name):'Available'}</span></div>`}).join('');}
  let rules=document.querySelectorAll('#rulebook .ruleSection .editable'),pr=document.getElementById('pubRulesBox');if(pr)pr.innerHTML=[...rules].map((r,i)=>`<div style="margin-bottom:14px"><b>Section ${i+1}</b><div class="notice" style="white-space:pre-wrap">${esc(r.value||r.textContent||'')}</div></div>`).join('')||'<div class="muted">Rules not configured.</div>';
 }
-function setPublicRoom(v){S.publicSelectedRoom=v||'';save();renderPublicApp();}
+function setPublicRoom(v){S.publicSelectedRoom=v||'';S.publicLeaderboardContestId=S.publicSelectedRoom;window.__aktanPublicRoomId=S.publicSelectedRoom||'all';save();renderPublicApp();if(typeof window.renderPremiumPublicV27==='function')window.renderPremiumPublicV27();}
 function setPublicBoard(v){S.publicLeaderboardMode=v||'overall';save();renderPublicApp();}
-function savePublicBoardControl(){if(typeof v9Guard==='function'&&!v9Guard())return;S.publicLeaderboardMode=document.getElementById('adminPublicBoardMode')?.value||'overall';S.publicLeaderboardContestId=document.getElementById('adminPublicBoardRoom')?.value||'';S.publicSelectedRoom=S.publicLeaderboardContestId||'';syncSetupFromInputs();renderPublicApp();renderAdminPublicBoardControl();if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150);toast('Public leaderboard updated');}
+function savePublicBoardControl(){if(typeof v9Guard==='function'&&!v9Guard())return;const m=document.getElementById('adminPublicBoardMode'),r=document.getElementById('adminPublicBoardRoom');S.publicLeaderboardMode=m?.value||'overall';S.publicLeaderboardContestId=r?.value||'';S.publicSelectedRoom=S.publicLeaderboardContestId||'';window.__aktanPublicRoomId=S.publicSelectedRoom||'all';syncSetupFromInputs();renderPublicApp();if(typeof window.renderPremiumPublicV27==='function')window.renderPremiumPublicV27();renderAdminPublicBoardControl();if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150);toast('Public leaderboard updated');}
 function renderAdminPublicBoardControl(){const m=document.getElementById('adminPublicBoardMode'),r=document.getElementById('adminPublicBoardRoom'),st=document.getElementById('adminPublicBoardStatus');if(!m||!r)return;m.value=S.publicLeaderboardMode||'overall';r.innerHTML='<option value="">All Rooms / Overall</option>'+ensureRooms().map(x=>`<option value="${escR(x.id)}">${escR(x.title)} • ${countApproved(x)}/${Math.max(1,+x.maxSlots||1)}</option>`).join('');r.value=S.publicLeaderboardContestId&&room(S.publicLeaderboardContestId)?S.publicLeaderboardContestId:'';if(st){const rr=room(r.value);st.textContent=rr?`Public page default: ${rr.title} • ${m.options[m.selectedIndex]?.text||''}`:`Public page default: All Rooms • ${m.options[m.selectedIndex]?.text||''}`;}}
 
 
@@ -3443,7 +3444,7 @@ window.previewOCRImages=function(e){
       bar.innerHTML='<div class="publicSelectGrid"><div><label>Room / Contest</label><select id="pubRoomSelect_'+kind+'">'+roomOptions+'</select></div>'+extra+'</div>';
       const target=kind==='rank'?rank:kind==='teams'?teams:slots;
       if(target)target.insertBefore(bar,target.children[1]||target.firstChild);
-      const sel=bar.querySelector('select[id^="pubRoomSelect_"]'); if(sel){sel.value=window.__aktanPublicRoomId;sel.onchange=function(){window.__aktanPublicRoomId=this.value;window.renderPremiumPublicV27();};}
+      const sel=bar.querySelector('select[id^="pubRoomSelect_"]'); if(sel){sel.value=window.__aktanPublicRoomId;sel.onchange=function(){window.__aktanPublicRoomId=this.value;S.publicSelectedRoom=this.value==='all'?'':this.value;S.publicLeaderboardContestId=S.publicSelectedRoom;save();window.renderPremiumPublicV27();renderPublicApp();};}
       if(kind==='rank'){const bs=document.getElementById('pubBoardSelect');if(bs)bs.value=window.__aktanPublicBoard;}
     };
     make('rank');make('teams');make('slots');
