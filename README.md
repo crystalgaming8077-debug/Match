@@ -1,18 +1,35 @@
-# AKTan V25 — Render Ready
+# AKTan V25 PostgreSQL Persistent Build
 
-## Deploy
-1. Upload these files to a GitHub repository.
-2. In Render: New -> Web Service -> connect the repository.
-3. Runtime: Node.
-4. Build command: `npm install`
-5. Start command: `npm start`
-6. Health check: `/health`
-7. Deploy.
+This build keeps the V25 HTML as the UI and adds PostgreSQL-backed persistence to the public tournament server.
 
-The server listens on `0.0.0.0` and uses Render's `PORT` environment variable.
+## Render setup
+1. Keep the PostgreSQL database available on Render.
+2. In the Web Service Environment, set `DATABASE_URL` to the database's **Internal Database URL**.
+3. Push/replace ALL files from this package in the GitHub repository used by the Render Web Service.
+4. Deploy the latest commit.
+5. Open `/health`. A correct setup returns `persistentStore: true` and version `25.2.0-postgres`.
 
-## Public spectator
-Open the deployed URL in the admin browser, create the Public Link, then share only that tokenized URL with spectators.
+The server automatically creates the `aktan_publications` table. If a local `public-data.json` exists and the PostgreSQL table is empty, it migrates those publications once.
 
-## Important data note
-This version stores shared tournament state in `public-data.json`. Render's free web service filesystem is not a durable database. For a real tournament with important registrations, use a persistent database or persistent disk before relying on it as the sole copy of data. Keep your existing V24/V25 local backup.
+Never commit `DATABASE_URL` or database passwords to GitHub.
+
+
+## V26.2 Public Contest Rooms
+Unlimited public rooms/contests with independent category, format, map, slot capacity, entry-fee display, prize pool, start time, status and rules. Public registration selects a room and the server enforces capacity including pending registrations. Entry fee is display/information only; payment collection, verification and refunds remain outside the app. Admin PIN can be changed from the Admin/Teams area.
+
+
+## V26.2 updates
+- Room-specific public registration validation for Solo/1v1/2v2/3v3/4v4/Squad.
+- Attractive room thumbnail upload + preview + public display.
+- Large visible “PAYMENT AFTER ALL SLOTS ARE FULL” banner on public room cards.
+- Admin PIN fields support up to 30 characters.
+
+
+## V27 Public Premium Room-wise Upgrade
+- Premium dark esports public theme with gold/purple/blue neon accents.
+- Animated All / Odd / Even public slot selector inspired by the existing Slot Page animation.
+- Room-wise accepted teams: public Teams view can be scoped to a selected room.
+- Room-wise leaderboard: public Rank view can be scoped to a selected room.
+- Room cards include room teams and room leaderboard actions.
+- Room-scoped public slots with accepted/available status.
+- Existing admin, registration, approval, OCR, leaderboard, print and server logic retained.
