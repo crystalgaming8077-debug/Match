@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.4.0-room-teams-leaderboard';
+const VERSION = '26.4.1-public-team-name-fix';
 
 let pg = null;
 let db = { publications: {} };
