@@ -1405,6 +1405,7 @@ function printPrizePool(){
   if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
 })();
 <\/script>
+
 </body></html>`);
   w.document.close();
 }
@@ -2609,7 +2610,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
     const c=getPublicRegConfig();const mode=(document.getElementById('pubRegMode')?.value||c.mode||'squad').toLowerCase();const solo=mode==='solo',duo=mode==='duo';
     const tw=document.getElementById('pubRegTeamWrap'), lw=document.getElementById('pubRegLogoLabel'), cw=document.getElementById('pubRegCaptainWrap');
     const logoWrap=document.getElementById('pubRegLogoWrap'), phoneWrap=document.getElementById('pubRegPhoneWrap'), playersWrap=document.getElementById('pubRegPlayers');
-    if(tw)tw.style.display=(!solo&&c.team)?'block':'none';
+    if(tw)tw.style.display=solo?'none':'block';
     if(logoWrap)logoWrap.style.display=c.logo?'block':'none';
     if(phoneWrap)phoneWrap.style.display=c.phone?'block':'none';
     if(playersWrap)playersWrap.style.display=c.players?'grid':'none';
@@ -2634,7 +2635,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
     const team=document.getElementById('pubRegTeam')?.value.trim()||'', phone=document.getElementById('pubRegPhone')?.value.trim()||'', captain=document.getElementById('pubRegCaptain')?.value.trim()||'';
     const players=['P1','P2','P3','P4','P5'].map(k=>document.getElementById('pubReg'+k)?.value.trim()||'');
     const needed=mode==='solo'?1:mode==='duo'?2:4;
-    if(c.team&&mode!=='solo'&&!team){document.getElementById('pubRegStatus').textContent='⚠ Please enter team name.';return}
+    if(mode!=='solo'&&!team){document.getElementById('pubRegStatus').textContent='⚠ Please enter team name.';return}
     if(c.phone&&!phone){document.getElementById('pubRegStatus').textContent='⚠ Please enter phone number.';return}
     if(c.players&&players.slice(0,needed).some(x=>!x)){document.getElementById('pubRegStatus').textContent='⚠ Please fill all required players for '+mode.toUpperCase()+'.';return}
     if(c.logo&&!publicRegLogoData){document.getElementById('pubRegStatus').textContent='⚠ Please select a '+(mode==='solo'?'player':'team')+' logo.';return}
@@ -3779,6 +3780,41 @@ window.previewOCRImages=function(e){
 })();
 </script>
 
+<script id="AKTanPublicRegistrationTeamFinalFix">
+/* Final registration fix: Team Name is mandatory + visible for every team format. SOLO is the only format where Team Name is hidden/not required. */
+(function(){
+  function teamRequiredMode(){
+    const sel=document.getElementById('pubRegContest');
+    const roomId=sel?.value||window.__aktanPublicRoomId||'';
+    let mode=(document.getElementById('pubRegMode')?.value||'squad').toLowerCase();
+    try{
+      const rooms=typeof ensureRooms==='function'?ensureRooms():[];
+      const r=rooms.find(x=>String(x.id)===String(roomId));
+      if(r && typeof formatInfo==='function') mode=formatInfo(r.format).mode;
+    }catch(e){}
+    return mode;
+  }
+  function enforceTeamField(){
+    const wrap=document.getElementById('pubRegTeamWrap'), input=document.getElementById('pubRegTeam');
+    if(!wrap)return;
+    const isSolo=teamRequiredMode()==='solo';
+    wrap.style.display=isSolo?'none':'block';
+    if(input)input.required=!isSolo;
+  }
+  const oldMode=window.publicRegModeChanged;
+  window.publicRegModeChanged=function(){if(typeof oldMode==='function')oldMode.apply(this,arguments);enforceTeamField();};
+  const oldRoom=window.publicRoomSelected;
+  window.publicRoomSelected=function(){if(typeof oldRoom==='function')oldRoom.apply(this,arguments);enforceTeamField();};
+  const oldSubmit=window.submitPublicRegistration;
+  window.submitPublicRegistration=function(){
+    enforceTeamField();
+    const mode=teamRequiredMode(), team=document.getElementById('pubRegTeam')?.value.trim()||'', st=document.getElementById('pubRegStatus');
+    if(mode!=='solo'&&!team){if(st)st.textContent='⚠ Please enter Team Name.';document.getElementById('pubRegTeam')?.focus();return;}
+    if(typeof oldSubmit==='function')return oldSubmit.apply(this,arguments);
+  };
+  setTimeout(enforceTeamField,100);setTimeout(enforceTeamField,500);setTimeout(enforceTeamField,1200);
+})();
+</script>
 </body>
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
