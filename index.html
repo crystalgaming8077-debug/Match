@@ -3619,6 +3619,15 @@ window.previewOCRImages=function(e){
   const selectedId=()=>window.__aktanPublicRoomId && window.__aktanPublicRoomId!=='all'?window.__aktanPublicRoomId:(S.publicSelectedRoom||'');
   const selectedTeams=()=>teamsFor(selectedId());
 
+  // Public room schedule: show the exact room date + start time configured by the organizer.
+  const roomStartText=r=>{
+    const v=r?.startAt;
+    if(!v)return 'Time not set';
+    const d=new Date(v);
+    if(Number.isNaN(d.getTime()))return String(v);
+    return d.toLocaleString(undefined,{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+  };
+
   function setRoom(id){
     window.__aktanPublicRoomId=id||'all';
     S.publicSelectedRoom=id||'';
@@ -3666,7 +3675,8 @@ window.previewOCRImages=function(e){
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
           <div style="min-width:0"><div class="eyebrow">${escv(r.category||'TOURNAMENT ROOM')}</div>
           <h2 style="margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escv(r.title)}</h2>
-          <div class="muted small">${escv(r.format||'')}${r.map?' • '+escv(r.map):''}</div></div>
+          <div class="muted small">${escv(r.format||'')}${r.map?' • '+escv(r.map):''}</div>
+          <div class="roomStartTime" style="margin-top:6px;font-weight:800;color:var(--pub-accent,#ffb000)">⏰ Starts: ${escv(roomStartText(r))}</div></div>
           <span class="roomStatusBadge ${st.toLowerCase()}">${st==='LIVE'?'🔴 ':st==='OPEN'?'🟢 ':'🔒 '}${st}</span>
         </div>
         ${r.thumbnail?`<img class="publicRoomThumb" src="${escv(r.thumbnail)}" alt="${escv(r.title)}">`:''}
