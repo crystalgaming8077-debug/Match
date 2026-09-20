@@ -1188,6 +1188,32 @@ window.quickReadScreenshot=async function(q){
 @keyframes pubBar{0%{background-position:0% 0}100%{background-position:250% 0}}
 @media(prefers-reduced-motion:reduce){#publicApp *,#publicApp *:before,#publicApp *:after{animation:none!important;transition:none!important}}
 </style>
+<style id="AKTanSpectatorPrizeThemeFix">
+/* Public Prize Preview + Public Spectator Prize Pool follow the Theme Store */
+#prizePublicPreview .publicCard,
+#publicApp #pubPrize .publicHero,
+#publicApp #pubPrize .publicCard{
+  background:
+    radial-gradient(circle at 88% 0%,color-mix(in srgb,var(--master-accent,#ffb000) 28%,transparent),transparent 30%),
+    radial-gradient(circle at 8% 100%,color-mix(in srgb,var(--master-accent2,#ff6b00) 20%,transparent),transparent 32%),
+    linear-gradient(145deg,var(--master-card,#15182a),var(--master-bg,#070a12) 62%,var(--master-card,#15182a)) !important;
+  border-color:color-mix(in srgb,var(--master-accent,#ffb000) 58%,white 3%) !important;
+  box-shadow:0 16px 42px rgba(0,0,0,.28),0 0 30px color-mix(in srgb,var(--master-accent,#ffb000) 10%,transparent) !important;
+}
+#prizePublicPreview .publicMoney,
+#publicApp #pubPrize .publicMoney{
+  color:var(--master-accent,#ffb000) !important;
+  text-shadow:0 0 22px color-mix(in srgb,var(--master-accent,#ffb000) 24%,transparent);
+}
+#prizePublicPreview .publicReward,
+#publicApp #pubPrize .publicReward{
+  border-color:color-mix(in srgb,var(--master-border,#ffb000) 30%,transparent) !important;
+}
+#prizePublicPreview .publicReward b,
+#publicApp #pubPrize .publicReward b{
+  color:var(--master-accent,#ffb000) !important;
+}
+</style>
 </head>
 <body>
 <header><h1>AKTan Tournament pointcalc</h1><div class="sub">Professional Free Fire Tournament Manager</div></header>
@@ -2642,7 +2668,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
   async function loadPendingPublicRegistrations(){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations',{headers:{'X-Admin-Key':publicAdminKey}});const count=d.registrations.length;if(lastPendingPublicCount!==null&&count>lastPendingPublicCount){const diff=count-lastPendingPublicCount;toast('🔔 New registration'+(diff>1?'s':'')+' received • '+diff+' pending');}lastPendingPublicCount=count;const box=document.getElementById('publicPendingBox');if(!box)return;box.innerHTML='<b>Pending registrations: '+count+'</b>'+(count?d.registrations.map(r=>`<div class="notice" style="margin-top:8px"><b>${esc(r.team)}</b> • Captain: ${esc(r.captain)}<div class="small muted">${esc((r.mode||'squad').toUpperCase())} • ${esc(r.phone||'No phone')} • ${r.players.map(esc).join(' • ')}</div>${r.logo?'<img src="'+r.logo+'" style="width:48px;height:48px;object-fit:contain;margin-top:6px;border-radius:8px">':''}<button class="primary" style="margin-top:7px" onclick="approvePublicRegistration('${r.id}')">✅ Approve & Add Team</button></div>`).join(''):'<div class="small muted" style="margin-top:6px">No pending registrations.</div>');}catch(e){}}
   window.loadPendingPublicRegistrations=loadPendingPublicRegistrations;
   window.approvePublicRegistration=async function(id){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'X-Admin-Key':publicAdminKey}});const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Solo Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();await publishPublicShare();}await loadPendingPublicRegistrations();}catch(e){alert('Approval failed: '+e.message)}};
-  async function bootRemotePublic(){const token=new URLSearchParams(location.search).get('publicToken');if(!token)return;try{document.body.classList.add('publicModeBody');const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/state');if(!d.state)throw new Error('Public tournament not found');S=Object.assign(S,d.state,{publicMode:true});ensurePrize();renderAll();document.getElementById('publicApp').style.display='block';renderPublicApp();publicRegModeChanged();publicSection('pubHome');}catch(e){const app=document.getElementById('publicApp');if(app){app.style.display='block';app.innerHTML='<div class="publicHero"><h1>Public link unavailable</h1><div>'+esc(e.message)+'</div></div>'}}}
+  async function bootRemotePublic(){const token=new URLSearchParams(location.search).get('publicToken');if(!token)return;try{document.body.classList.add('publicModeBody');const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/state');if(!d.state)throw new Error('Public tournament not found');S=Object.assign(S,d.state,{publicMode:true});if(typeof applySpectatorTheme==='function')applySpectatorTheme();ensurePrize();renderAll();document.getElementById('publicApp').style.display='block';if(typeof applySpectatorTheme==='function')applySpectatorTheme();renderPublicApp();publicRegModeChanged();publicSection('pubHome');}catch(e){const app=document.getElementById('publicApp');if(app){app.style.display='block';app.innerHTML='<div class="publicHero"><h1>Public link unavailable</h1><div>'+esc(e.message)+'</div></div>'}}}
   window.publicAdminLogin=async function(){const token=new URLSearchParams(location.search).get('publicToken');if(!token){alert('Open the public tournament link first.');return}const old=document.getElementById('aktanAdminLoginBox');if(old)old.remove();const box=document.createElement('div');box.id='aktanAdminLoginBox';box.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:20px';box.innerHTML='<div style="width:min(420px,100%);background:#111827;border:1px solid #6b7280;border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#fff"><h2 style="margin:0 0 8px">🔐 Admin Login</h2><div style="font-size:13px;opacity:.8;margin-bottom:14px">Enter your Admin PIN / Password to unlock the main app.</div><input id="aktanAdminLoginPass" type="password" autocomplete="current-password" placeholder="Admin PIN / Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #4b5563;background:#0b1220;color:#fff"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="aktanAdminLoginBtn" class="primary" type="button">🔓 Login</button><button id="aktanAdminCancelBtn" type="button">Cancel</button></div><div id="aktanAdminLoginMsg" style="margin-top:10px;font-size:13px;min-height:18px"></div></div>';document.body.appendChild(box);const inp=document.getElementById('aktanAdminLoginPass'),msg=document.getElementById('aktanAdminLoginMsg');const close=()=>box.remove();document.getElementById('aktanAdminCancelBtn').onclick=close;document.getElementById('aktanAdminLoginBtn').onclick=async()=>{const password=inp.value;if(!password){msg.textContent='Please enter the Admin Password / PIN.';return}const btn=document.getElementById('aktanAdminLoginBtn');btn.disabled=true;msg.textContent='Checking…';try{const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/admin-login',{method:'POST',body:JSON.stringify({password})});publicToken=token;publicAdminKey=d.adminKey;remoteAdminSession=false;remoteAdminPending=true;remoteAdminPassword=password;window.__aktanRemoteAdminCheck=(candidate)=>remoteAdminPending&&candidate===remoteAdminPassword;window.__aktanRemoteAdminUnlock=()=>{remoteAdminPending=false;remoteAdminSession=true;window.__aktanRemoteAdminSession=true;S.publicMode=false;S.adminPin=remoteAdminPassword;remoteAdminPassword='';document.body.classList.remove('publicModeBody');const pubCard=document.getElementById('publicRoomsCard');if(pubCard)pubCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const ctl=document.getElementById('publicControlCard');if(ctl)ctl.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const pinCard=document.getElementById('changePinCard');if(pinCard)pinCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);};localStorage.setItem(PUB_TOKEN_KEY,publicToken);localStorage.setItem(PUB_ADMIN_KEY,publicAdminKey);S=Object.assign(S,d.state,{publicMode:true});document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';close();renderAll();syncPublicAdminRegistrationUI();toast('🔐 Password verified. Now open Admin Mode and enter the same password again.');}catch(e){msg.textContent='❌ '+e.message;if(/incorrect|invalid admin password/i.test(e.message)){msg.textContent+='  Check your Admin PIN and try again.';}btn.disabled=false;}};inp.focus();inp.onkeydown=e=>{if(e.key==='Enter')document.getElementById('aktanAdminLoginBtn').click();}};
 
   window.recoverAdminPin=async function(){
@@ -3599,6 +3625,20 @@ window.previewOCRImages=function(e){
 </style>
 
 
+<script id="AKTanSpectatorThemeSync">
+(function(){
+  window.applySpectatorTheme=function(){
+    try{
+      const t=(typeof getPrintTheme==='function')?getPrintTheme():(S&&S.printTheme)||{bg:'#070a12',card:'#15182a',accent:'#ffb000',accent2:'#ff6b00',text:'#fff',border:'#ffb000'};
+      const r=document.documentElement;
+      [['--master-bg',t.bg],['--master-card',t.card],['--master-accent',t.accent],['--master-accent2',t.accent2||t.accent],['--master-text',t.text||'#fff'],['--master-border',t.border||t.accent],['--accent',t.accent],['--accent2',t.accent2||t.accent]].forEach(x=>r.style.setProperty(x[0],x[1]));
+      const app=document.getElementById('publicApp');
+      if(app){[['--pub-accent',t.accent],['--pub-accent2',t.accent2||t.accent],['--pub-bg',t.bg],['--pub-card',t.card],['--pub-glow',(t.accent||'#ffb000')+'66']].forEach(x=>app.style.setProperty(x[0],x[1]));}
+    }catch(e){}
+  };
+  window.addEventListener('load',()=>setTimeout(()=>window.applySpectatorTheme(),150));
+})();
+</script>
 <script id="AKTanPremiumPublicV28JS">
 (function(){
   const escv=v=>typeof esc==='function'?esc(v):String(v??'');
