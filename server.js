@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.8.0-registration-push-reliable';
+const VERSION = '26.9.0-registration-push-safe';
 
 let pg = null;
 let webPush = null;
@@ -20,7 +20,8 @@ async function initPush(){
     webPush = require('web-push');
     if(pg){
       await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_config (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL, private_key TEXT NOT NULL, created_at BIGINT NOT NULL)`);
-      await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_subscriptions (token TEXT NOT NULL, admin_key TEXT, endpoint TEXT PRIMARY KEY, subscription JSONB NOT NULL, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL); ALTER TABLE aktan_push_subscriptions ADD COLUMN IF NOT EXISTS admin_key TEXT`);
+      await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_subscriptions (token TEXT NOT NULL, admin_key TEXT, endpoint TEXT PRIMARY KEY, subscription JSONB NOT NULL, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL)`);
+      await pg.query(`ALTER TABLE aktan_push_subscriptions ADD COLUMN IF NOT EXISTS admin_key TEXT`);
       let r=await pg.query('SELECT public_key,private_key FROM aktan_push_config WHERE id=1');
       if(!r.rowCount){ const keys=webPush.generateVAPIDKeys(); await pg.query('INSERT INTO aktan_push_config(id,public_key,private_key,created_at) VALUES(1,$1,$2,$3)',[keys.publicKey,keys.privateKey,Date.now()]); pushConfig=keys; }
       else pushConfig={publicKey:r.rows[0].public_key,privateKey:r.rows[0].private_key};
@@ -128,6 +129,7 @@ async function initStore(){
     try{
       const { Pool } = require('pg');
       pg = new Pool({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false},max:5,idleTimeoutMillis:30000,connectionTimeoutMillis:10000});
+      pg.on('error', e => console.error('PostgreSQL pool error:', e.message));
       await pg.query(`CREATE TABLE IF NOT EXISTS aktan_publications (
         token TEXT PRIMARY KEY,
         admin_key TEXT NOT NULL,
