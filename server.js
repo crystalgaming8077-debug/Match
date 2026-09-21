@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.7.0-registration-push-phone-fixed';
+const VERSION = '26.8.0-registration-push-reliable';
 
 let pg = null;
 let webPush = null;
@@ -77,12 +77,12 @@ async function sendPushReliable(subscription,payload,endpoint){
 async function notifyNewRegistration(token,r){
   if(!webPush) return {sent:0,failed:0,subscriptions:0,mode:'push-unavailable'};
   const pub=await getPub(token);
-  let list=await getPushSubscriptions(token,pub?.adminKey);
-  // If the organizer created a new public link after enabling notifications, the
-  // subscription may still belong to the previous publication. Fall back to the
-  // active push devices so a registration is not silently missed.
-  let mode='targeted';
-  if(!list.length){ list=await getAllPushSubscriptions(); mode='fallback-all-active-devices'; }
+  const targeted=await getPushSubscriptions(token,pub?.adminKey);
+  const all=await getAllPushSubscriptions();
+  const byEndpoint=new Map();
+  [...targeted,...all].forEach(x=>{if(x?.endpoint&&x?.subscription)byEndpoint.set(x.endpoint,x);});
+  const list=[...byEndpoint.values()];
+  const mode=targeted.length===list.length?'targeted':'targeted+all-active';
   const base=process.env.RENDER_EXTERNAL_URL||((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:'');
   const targetUrl=(base||'')+'/?publicToken='+encodeURIComponent(token);
   const payload=JSON.stringify({title:'AKTan Tournament',body:`New registration: ${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,url:targetUrl,tag:'aktan-registration-'+r.id,id:r.id,createdAt:r.createdAt||Date.now()});
@@ -218,7 +218,10 @@ const server=http.createServer(async (req,res)=>{
       const identity=(team||players[0]).toLowerCase();
       const exists=(pub.state.teams||[]).some(t=>String(t.name||'').trim().toLowerCase()===identity)||pub.registrations.some(r=>String(r.team||r.players?.[0]||'').toLowerCase()===identity);
       if(exists)return json(res,409,{error:'This team/player name is already registered or pending'});
-      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);let push={sent:0,failed:0,subscriptions:0};try{push=await notifyNewRegistration(token,r);}catch(e){console.error('Registration push notification failed:',e.message);}return json(res,201,{ok:true,id:r.id,push});
+      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);
+      let push={sent:0,failed:0,subscriptions:0};try{push=await notifyNewRegistration(token,r);}catch(e){console.error('Registration push notification failed:',e.message);}
+      if(!push.sent){setTimeout(()=>notifyNewRegistration(token,r).catch(e=>console.error('Registration push retry 1 failed:',e.message)),1500);setTimeout(()=>notifyNewRegistration(token,r).catch(e=>console.error('Registration push retry 2 failed:',e.message)),5000);}
+      return json(res,201,{ok:true,id:r.id,push});
     }
     m=u.pathname.match(/^\/api\/admin\/([^/]+)\/registrations$/);
     if(m && req.method==='GET'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});return json(res,200,{registrations:pub.registrations});}
