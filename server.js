@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.9.0-registration-push-safe';
+const VERSION = '26.10.0-registration-push-v6';
 
 let pg = null;
 let webPush = null;
@@ -221,8 +221,17 @@ const server=http.createServer(async (req,res)=>{
       const exists=(pub.state.teams||[]).some(t=>String(t.name||'').trim().toLowerCase()===identity)||pub.registrations.some(r=>String(r.team||r.players?.[0]||'').toLowerCase()===identity);
       if(exists)return json(res,409,{error:'This team/player name is already registered or pending'});
       const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);
-      let push={sent:0,failed:0,subscriptions:0};try{push=await notifyNewRegistration(token,r);}catch(e){console.error('Registration push notification failed:',e.message);}
-      if(!push.sent){setTimeout(()=>notifyNewRegistration(token,r).catch(e=>console.error('Registration push retry 1 failed:',e.message)),1500);setTimeout(()=>notifyNewRegistration(token,r).catch(e=>console.error('Registration push retry 2 failed:',e.message)),5000);}
+      // Push is deliberately attempted AFTER the registration is persisted.
+      // Do not use detached setTimeout retries here: a Render instance can restart
+      // between the response and those timers. sendPushReliable() already performs
+      // bounded retries and returns diagnostics without breaking registration.
+      let push={sent:0,failed:0,subscriptions:0,mode:'not-attempted'};
+      try{
+        push=await notifyNewRegistration(token,r);
+      }catch(e){
+        console.error('Registration push notification failed:',e?.stack||e?.message||e);
+        push={sent:0,failed:0,subscriptions:0,mode:'error',error:String(e?.message||e)};
+      }
       return json(res,201,{ok:true,id:r.id,push});
     }
     m=u.pathname.match(/^\/api\/admin\/([^/]+)\/registrations$/);
@@ -232,9 +241,16 @@ const server=http.createServer(async (req,res)=>{
 
     if(req.method==='GET' && u.pathname==='/'){const file=u.searchParams.has('publicToken')?HTML:path.join(ROOT,'index.html');const html=fs.readFileSync(file);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(html);}
     if(req.method==='GET' && u.pathname==='/index.html'){const html=fs.readFileSync(path.join(ROOT,'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});return res.end(html);}
-    if(req.method==='GET' && u.pathname==='/health')return json(res,200,{ok:true,publications:await countPubs(),persistentStore:!!pg,version:VERSION});
+    if(req.method==='GET' && u.pathname==='/health')return json(res,200,{ok:true,publications:await countPubs(),persistentStore:!!pg,pushReady:!!webPush,version:VERSION});
     res.writeHead(404,{'Content-Type':'text/plain'});res.end('Not found');
   }catch(e){console.error(e);json(res,500,{error:'Server error: '+e.message})}
 });
 
-initStore().then(initPush).then(()=>server.listen(PORT,HOST,()=>console.log(`AKTan Public Server running on http://${HOST}:${PORT} (${VERSION})`))).catch(e=>{console.error('Startup failed:',e);process.exit(1)});
+async function startServer(){
+  // Never let an optional subsystem prevent Render from binding the HTTP port.
+  // This keeps the health endpoint alive even if push/DB initialization has a transient failure.
+  try{ await initStore(); }catch(e){ console.error('Store initialization failed (continuing):',e?.stack||e?.message||e); pg=null; db=loadLocalDB(); }
+  try{ await initPush(); }catch(e){ webPush=null; console.error('Push initialization failed (continuing):',e?.stack||e?.message||e); }
+  server.listen(PORT,HOST,()=>console.log(`AKTan Public Server running on http://${HOST}:${PORT} (${VERSION})`));
+}
+startServer();
