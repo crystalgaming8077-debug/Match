@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.11.0-registration-push-v7';
+const VERSION = '26.11.0-registration-push-v8';
 let pushWorkerRunning = false;
 
 let pg = null;
@@ -235,7 +235,8 @@ const server=http.createServer(async (req,res)=>{
     if(req.method==='POST' && u.pathname==='/api/push/test'){const b=await readBody(req);const token=String(b.token||'');const pub=await getPub(token);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const fake={id:'test-'+makeToken(),team:'Test Notification',contestTitle:'AKTan Push Test',players:[]};const result=await notifyNewRegistration(token,fake);return json(res,200,{ok:true,...result});}
     m=u.pathname.match(/^\/api\/public\/([^/]+)\/register$/);
     if(m && req.method==='POST'){
-      const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});const b=await readBody(req);
+      const token=m[1];
+      const pub=await getPub(token);if(!pub)return json(res,404,{error:'Public tournament not found'});const b=await readBody(req);
       const cfg=Object.assign({mode:'squad',logo:true,team:true,players:true,phone:true},pub.state.publicRegistration||{});
       const contestId=clean(b.contestId,80);
       const contests=Array.isArray(pub.state.publicContests)?pub.state.publicContests:[];
