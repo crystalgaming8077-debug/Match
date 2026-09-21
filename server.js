@@ -8,7 +8,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.10.0-registration-push-v6';
+const VERSION = '26.11.0-registration-push-v7';
+let pushWorkerRunning = false;
 
 let pg = null;
 let webPush = null;
@@ -22,6 +23,7 @@ async function initPush(){
       await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_config (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL, private_key TEXT NOT NULL, created_at BIGINT NOT NULL)`);
       await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_subscriptions (token TEXT NOT NULL, admin_key TEXT, endpoint TEXT PRIMARY KEY, subscription JSONB NOT NULL, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL)`);
       await pg.query(`ALTER TABLE aktan_push_subscriptions ADD COLUMN IF NOT EXISTS admin_key TEXT`);
+      await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_queue (id BIGSERIAL PRIMARY KEY, token TEXT NOT NULL, registration JSONB NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending', last_error TEXT, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL)`);
       let r=await pg.query('SELECT public_key,private_key FROM aktan_push_config WHERE id=1');
       if(!r.rowCount){ const keys=webPush.generateVAPIDKeys(); await pg.query('INSERT INTO aktan_push_config(id,public_key,private_key,created_at) VALUES(1,$1,$2,$3)',[keys.publicKey,keys.privateKey,Date.now()]); pushConfig=keys; }
       else pushConfig={publicKey:r.rows[0].public_key,privateKey:r.rows[0].private_key};
@@ -73,6 +75,44 @@ async function sendPushReliable(subscription,payload,endpoint){
   }
   console.error('Push send failed:',endpoint||'',lastErr?.statusCode||'',lastErr?.message||lastErr);
   return {ok:false,error:lastErr};
+}
+
+async function enqueuePush(token,r){
+  if(pg){
+    const q=await pg.query(`INSERT INTO aktan_push_queue(token,registration,attempts,status,created_at,updated_at) VALUES($1,$2::jsonb,0,'pending',$3,$3) RETURNING id`,[token,JSON.stringify(r),Date.now()]);
+    return q.rows[0]?.id||null;
+  }
+  db.pushQueue=db.pushQueue||[];
+  const item={id:Date.now()+'-'+makeToken(),token,registration:r,attempts:0,status:'pending',createdAt:Date.now()};
+  db.pushQueue.push(item); saveLocalDB(); return item.id;
+}
+
+async function processPushQueue(){
+  if(pushWorkerRunning) return;
+  pushWorkerRunning=true;
+  try{
+    if(!webPush) return;
+    if(pg){
+      const q=await pg.query(`SELECT id,token,registration,attempts FROM aktan_push_queue WHERE status='pending' ORDER BY id ASC LIMIT 3`);
+      for(const item of q.rows){
+        try{
+          const result=await notifyNewRegistration(item.token,item.registration);
+          const nextAttempts=Number(item.attempts||0)+1;
+          const done=result.sent>0 || nextAttempts>=3;
+          await pg.query('UPDATE aktan_push_queue SET attempts=$2,status=$3,last_error=$4,updated_at=$5 WHERE id=$1',[item.id,nextAttempts,done?'done':'pending',result.sent>0?'':('sent=0 failed='+result.failed+' subscriptions='+result.subscriptions),Date.now()]);
+        }catch(e){
+          const nextAttempts=Number(item.attempts||0)+1;
+          await pg.query('UPDATE aktan_push_queue SET attempts=$2,status=$3,last_error=$4,updated_at=$5 WHERE id=$1',[item.id,nextAttempts,nextAttempts>=3?'done':'pending',String(e.message||e),Date.now()]);
+        }
+      }
+    }else{
+      db.pushQueue=db.pushQueue||[];
+      for(const item of db.pushQueue.filter(x=>x.status==='pending').slice(0,3)){
+        try{const result=await notifyNewRegistration(item.token,item.registration);item.attempts++;item.status=(result.sent>0||item.attempts>=3)?'done':'pending';item.lastError=result.sent>0?'':('sent=0 failed='+result.failed+' subscriptions='+result.subscriptions);}catch(e){item.attempts++;item.lastError=String(e.message||e);if(item.attempts>=3)item.status='done';}
+      }
+      saveLocalDB();
+    }
+  }finally{pushWorkerRunning=false;}
 }
 
 async function notifyNewRegistration(token,r){
@@ -221,18 +261,20 @@ const server=http.createServer(async (req,res)=>{
       const exists=(pub.state.teams||[]).some(t=>String(t.name||'').trim().toLowerCase()===identity)||pub.registrations.some(r=>String(r.team||r.players?.[0]||'').toLowerCase()===identity);
       if(exists)return json(res,409,{error:'This team/player name is already registered or pending'});
       const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);
-      // Push is deliberately attempted AFTER the registration is persisted.
-      // Do not use detached setTimeout retries here: a Render instance can restart
-      // between the response and those timers. sendPushReliable() already performs
-      // bounded retries and returns diagnostics without breaking registration.
-      let push={sent:0,failed:0,subscriptions:0,mode:'not-attempted'};
+      // Persist a notification job first, then attempt immediately. The queue worker
+      // will retry the job independently if the immediate attempt gets no delivery.
+      let push={sent:0,failed:0,subscriptions:0,mode:'queued'};
+      let queueId=null;
       try{
+        queueId=await enqueuePush(token,r);
         push=await notifyNewRegistration(token,r);
+        console.log(`Registration push immediate: sent=${push.sent}; failed=${push.failed}; subscriptions=${push.subscriptions}; queue=${queueId}; registration=${r.id}`);
+        if(push.sent>0 && pg) await pg.query(`UPDATE aktan_push_queue SET status='done',attempts=1,last_error='',updated_at=$2 WHERE id=$1`,[queueId,Date.now()]);
       }catch(e){
-        console.error('Registration push notification failed:',e?.stack||e?.message||e);
-        push={sent:0,failed:0,subscriptions:0,mode:'error',error:String(e?.message||e)};
+        console.error('Registration push immediate failed:',e?.stack||e?.message||e);
+        push={sent:0,failed:0,subscriptions:0,mode:'queued-retry',error:String(e?.message||e)};
       }
-      return json(res,201,{ok:true,id:r.id,push});
+      return json(res,201,{ok:true,id:r.id,push,queueId});
     }
     m=u.pathname.match(/^\/api\/admin\/([^/]+)\/registrations$/);
     if(m && req.method==='GET'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});return json(res,200,{registrations:pub.registrations});}
@@ -251,6 +293,10 @@ async function startServer(){
   // This keeps the health endpoint alive even if push/DB initialization has a transient failure.
   try{ await initStore(); }catch(e){ console.error('Store initialization failed (continuing):',e?.stack||e?.message||e); pg=null; db=loadLocalDB(); }
   try{ await initPush(); }catch(e){ webPush=null; console.error('Push initialization failed (continuing):',e?.stack||e?.message||e); }
-  server.listen(PORT,HOST,()=>console.log(`AKTan Public Server running on http://${HOST}:${PORT} (${VERSION})`));
+  server.listen(PORT,HOST,()=>{
+    console.log(`AKTan Public Server running on http://${HOST}:${PORT} (${VERSION})`);
+    setInterval(()=>processPushQueue().catch(e=>console.error('Push queue worker:',e?.message||e)),2000);
+    processPushQueue().catch(()=>{});
+  });
 }
 startServer();
