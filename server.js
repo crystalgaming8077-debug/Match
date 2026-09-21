@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.6.1-registration-push-retry-fallback';
+const VERSION = '26.7.0-registration-push-phone-fixed';
 
 let pg = null;
 let webPush = null;
@@ -56,75 +56,45 @@ async function getAllPushSubscriptions(){
   }
   return Object.values(db.pushSubscriptions||{}).map(x=>({endpoint:x.subscription.endpoint,subscription:x.subscription}));
 }
+async function sendPushReliable(subscription,payload,endpoint){
+  let lastErr=null;
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      await webPush.sendNotification(subscription,payload,{TTL:300,urgency:'high'});
+      return {ok:true};
+    }catch(e){
+      lastErr=e;
+      if(e.statusCode===404||e.statusCode===410) return {ok:false,expired:true,error:e};
+      const retryable=!e.statusCode||e.statusCode===408||e.statusCode===429||e.statusCode>=500;
+      if(!retryable||attempt===3) break;
+      await new Promise(resolve=>setTimeout(resolve,350*attempt));
+    }
+  }
+  console.error('Push send failed:',endpoint||'',lastErr?.statusCode||'',lastErr?.message||lastErr);
+  return {ok:false,error:lastErr};
+}
+
 async function notifyNewRegistration(token,r){
   if(!webPush) return {sent:0,failed:0,subscriptions:0,mode:'push-unavailable'};
-
   const pub=await getPub(token);
   let list=await getPushSubscriptions(token,pub?.adminKey);
+  // If the organizer created a new public link after enabling notifications, the
+  // subscription may still belong to the previous publication. Fall back to the
+  // active push devices so a registration is not silently missed.
   let mode='targeted';
-
-  // A device can remain subscribed after the organizer creates a fresh public
-  // link. If there is no subscription for this token, use all active devices.
-  if(!list.length){
-    list=await getAllPushSubscriptions();
-    mode='fallback-all-active-devices';
-  }
-
-  const base=process.env.RENDER_EXTERNAL_URL ||
-    ((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:'');
-  const targetUrl=base+'/?publicToken='+encodeURIComponent(token);
-  const payload=JSON.stringify({
-    id:r.id,
-    title:'AKTan Tournament',
-    body:`New team registered: ${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,
-    url:targetUrl,
-    tag:'aktan-registration-'+r.id,
-    createdAt:Date.now()
-  });
-
+  if(!list.length){ list=await getAllPushSubscriptions(); mode='fallback-all-active-devices'; }
+  const base=process.env.RENDER_EXTERNAL_URL||((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:'');
+  const targetUrl=(base||'')+'/?publicToken='+encodeURIComponent(token);
+  const payload=JSON.stringify({title:'AKTan Tournament',body:`New registration: ${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,url:targetUrl,tag:'aktan-registration-'+r.id,id:r.id,createdAt:r.createdAt||Date.now()});
   let sent=0,failed=0;
-  const failedEndpoints=[];
-
-  async function sendOne(x){
-    for(let attempt=1; attempt<=3; attempt++){
-      try{
-        await webPush.sendNotification(x.subscription,payload,{TTL:300,urgency:'high'});
-        sent++;
-        return true;
-      }catch(e){
-        if(e.statusCode===404||e.statusCode===410){
-          failed++;
-          await removePushSubscription(x.endpoint);
-          return false;
-        }
-        if(attempt===3){
-          failed++;
-          failedEndpoints.push(x.endpoint);
-          console.error('Registration push send failed:',e.statusCode||'',e.message);
-          return false;
-        }
-        await new Promise(resolve=>setTimeout(resolve,500*attempt));
-      }
+  await Promise.all(list.map(async x=>{
+    const result=await sendPushReliable(x.subscription,payload,x.endpoint);
+    if(result.ok) sent++; else {
+      failed++;
+      if(result.expired) await removePushSubscription(x.endpoint);
     }
-    return false;
-  }
-
-  await Promise.all(list.map(sendOne));
-
-  // If token-targeted delivery failed completely, retry against the active
-  // device set. This covers old/public-link subscription mismatches and
-  // transient provider errors without changing the registration flow.
-  if(sent===0 && list.length && mode==='targeted'){
-    const all=await getAllPushSubscriptions();
-    const seen=new Set(list.map(x=>x.endpoint));
-    const extra=all.filter(x=>!seen.has(x.endpoint));
-    if(extra.length){
-      mode='targeted+fallback';
-      await Promise.all(extra.map(sendOne));
-    }
-  }
-
-  console.log(`Registration push: ${mode}; sent=${sent}; failed=${failed}; subscriptions=${list.length}`);
+  }));
+  console.log(`Registration push: ${mode}; sent=${sent}; failed=${failed}; subscriptions=${list.length}; registration=${r.id}`);
   return {sent,failed,subscriptions:list.length,mode};
 }
 async function pushStatus(token,adminKey){
@@ -213,7 +183,7 @@ const server=http.createServer(async (req,res)=>{
     m=u.pathname.match(/^\/api\/public\/([^/]+)\/admin-login$/);
     if(m && req.method==='POST'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});const b=await readBody(req);const hash=pub.state&&pub.state._aktanAdminPasswordHash;if(!hash)return json(res,403,{error:'Admin password is not configured. Open the main app, set an Admin PIN, then Publish / Sync.'});if(passwordHash(b.password)!==hash)return json(res,403,{error:'Invalid admin password'});return json(res,200,{ok:true,adminKey:pub.adminKey,state:publicState(pub),updatedAt:pub.updatedAt});}
     if(req.method==='GET' && u.pathname==='/push-sw.js'){
-      const sw=`self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));self.addEventListener('push',event=>{let d={title:'AKTan Tournament',body:'New team registered',url:'/',tag:'aktan-registration'};try{if(event.data)d=Object.assign(d,event.data.json())}catch(e){}const options={body:d.body,tag:d.tag||('aktan-registration-'+(d.id||Date.now())),renotify:true,requireInteraction:true,vibrate:[200,100,200],timestamp:d.createdAt||Date.now(),data:{url:d.url||'/'}};event.waitUntil(self.registration.showNotification(d.title,options));});self.addEventListener('notificationclick',event=>{event.notification.close();const url=event.notification.data?.url||'/';event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if('focus' in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}));});`;res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-store','Service-Worker-Allowed':'/'});return res.end(sw);
+      const sw=`self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));self.addEventListener('push',event=>{let d={title:'AKTan Tournament',body:'New registration received',url:'/',tag:'aktan-registration'};try{if(event.data)d=Object.assign(d,event.data.json())}catch(e){}const options={body:d.body,tag:d.tag||('aktan-registration-'+(d.id||Date.now())),renotify:true,requireInteraction:true,vibrate:[200,100,200],timestamp:d.createdAt||Date.now(),data:{url:d.url||'/'}};event.waitUntil(self.registration.showNotification(d.title,options));});self.addEventListener('notificationclick',event=>{event.notification.close();const url=event.notification.data?.url||'/';event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if('focus' in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}));});`;res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-store','Service-Worker-Allowed':'/'});return res.end(sw);
     }
     if(req.method==='GET' && u.pathname==='/api/push/public-key') return json(res,200,{publicKey:pushConfig?.publicKey||null});
     m=u.pathname.match(/^\/api\/push\/([^/]+)\/status$/);
