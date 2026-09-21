@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.5.0-server-push-notifications';
+const VERSION = '26.6.0-server-push-registration-fixed';
 
 let pg = null;
 let webPush = null;
@@ -49,14 +49,28 @@ async function getPushSubscriptions(token,adminKey){
   }
   const seen=new Set(); return Object.values(db.pushSubscriptions||{}).filter(x=>(x.token===token)||(adminKey&&x.adminKey===adminKey)).map(x=>({endpoint:x.subscription.endpoint,subscription:x.subscription})).filter(x=>{if(seen.has(x.endpoint))return false;seen.add(x.endpoint);return true;});
 }
+async function getAllPushSubscriptions(){
+  if(pg){
+    const r=await pg.query('SELECT endpoint,subscription FROM aktan_push_subscriptions');
+    return r.rows;
+  }
+  return Object.values(db.pushSubscriptions||{}).map(x=>({endpoint:x.subscription.endpoint,subscription:x.subscription}));
+}
 async function notifyNewRegistration(token,r){
-  if(!webPush) return {sent:0,failed:0};
-  const pub=await getPub(token); const list=await getPushSubscriptions(token,pub?.adminKey);
+  if(!webPush) return {sent:0,failed:0,subscriptions:0,mode:'push-unavailable'};
+  const pub=await getPub(token);
+  let list=await getPushSubscriptions(token,pub?.adminKey);
+  // If the organizer created a new public link after enabling notifications, the
+  // subscription may still belong to the previous publication. Fall back to the
+  // active push devices so a registration is not silently missed.
+  let mode='targeted';
+  if(!list.length){ list=await getAllPushSubscriptions(); mode='fallback-all-active-devices'; }
   const base=process.env.RENDER_EXTERNAL_URL||((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:'');
   const payload=JSON.stringify({title:'🔔 New Team Registration',body:`${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,url:base+'/?publicToken='+encodeURIComponent(token),tag:'aktan-registration-'+r.id});
   let sent=0,failed=0;
   await Promise.all(list.map(async x=>{try{await webPush.sendNotification(x.subscription,payload);sent++;}catch(e){failed++;if(e.statusCode===404||e.statusCode===410) await removePushSubscription(x.endpoint);else console.error('Push send failed:',e.statusCode||'',e.message);}}));
-  return {sent,failed,subscriptions:list.length};
+  console.log(`Registration push: ${mode}; sent=${sent}; failed=${failed}; subscriptions=${list.length}`);
+  return {sent,failed,subscriptions:list.length,mode};
 }
 async function pushStatus(token,adminKey){
   if(pg){const r=await pg.query('SELECT COUNT(*)::int AS n FROM aktan_push_subscriptions WHERE token=$1 OR admin_key=$2',[token,adminKey||'']);return r.rows[0].n;}
