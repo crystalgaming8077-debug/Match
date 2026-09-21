@@ -1,25 +1,18 @@
-# AKTan V25 PostgreSQL Persistent Build
+# AKTan Tournament PointCalc V26.5 — Server Push Notifications
 
-This build keeps the V25 HTML as the UI and adds PostgreSQL-backed persistence to the public tournament server.
+This build keeps the existing Supabase/PostgreSQL persistence and adds server-side Web Push notifications for new public registrations.
 
-## Render setup
-1. Keep the PostgreSQL database available on Render.
-2. In the Web Service Environment, set `DATABASE_URL` to the database's **Internal Database URL**.
-3. Push/replace ALL files from this package in the GitHub repository used by the Render Web Service.
-4. Deploy the latest commit.
-5. Open `/health`. A correct setup returns `persistentStore: true` and version `25.2.0-postgres`.
+## Setup on Render + Supabase
+- Keep the existing `DATABASE_URL` environment variable pointing to the Supabase PostgreSQL connection string.
+- Deploy normally with `npm install` / `npm start`.
+- The server automatically creates the required push tables in the same PostgreSQL database and generates/stores VAPID keys there once.
+- HTTPS is required for browser push in production; Render's public HTTPS URL satisfies this.
 
-The server automatically creates the `aktan_publications` table. If a local `public-data.json` exists and the PostgreSQL table is empty, it migrates those publications once.
+## Enable notifications
+1. Open the main/admin tournament page on the Android phone that should receive alerts.
+2. Create/use the existing public link.
+3. Tap **🔔 Enable Registration Notifications** and allow browser notifications.
+4. Tap **🧪 Test Notification** to verify the phone receives a push.
+5. A new public registration will then trigger a server-side push notification.
 
-Never commit `DATABASE_URL` or database passwords to GitHub.
-
-
-## V26.2 Public Contest Rooms
-Unlimited public rooms/contests with independent category, format, map, slot capacity, entry-fee display, prize pool, start time, status and rules. Public registration selects a room and the server enforces capacity including pending registrations. Entry fee is display/information only; payment collection, verification and refunds remain outside the app. Admin PIN can be changed from the Admin/Teams area.
-
-
-## V26.2 updates
-- Room-specific public registration validation for Solo/1v1/2v2/3v3/4v4/Squad.
-- Attractive room thumbnail upload + preview + public display.
-- Large visible “PAYMENT AFTER ALL SLOTS ARE FULL” banner on public room cards.
-- Admin PIN fields support up to 30 characters.
+The service worker is served at `/push-sw.js`, so Chrome does not need to remain open in the foreground. Android/Chrome still controls battery/background delivery and notification permissions.
