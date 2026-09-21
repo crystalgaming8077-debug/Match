@@ -20,7 +20,7 @@ async function initPush(){
     webPush = require('web-push');
     if(pg){
       await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_config (id INTEGER PRIMARY KEY, public_key TEXT NOT NULL, private_key TEXT NOT NULL, created_at BIGINT NOT NULL)`);
-      await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_subscriptions (token TEXT NOT NULL, endpoint TEXT PRIMARY KEY, subscription JSONB NOT NULL, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL)`);
+      await pg.query(`CREATE TABLE IF NOT EXISTS aktan_push_subscriptions (token TEXT NOT NULL, admin_key TEXT, endpoint TEXT PRIMARY KEY, subscription JSONB NOT NULL, created_at BIGINT NOT NULL, updated_at BIGINT NOT NULL); ALTER TABLE aktan_push_subscriptions ADD COLUMN IF NOT EXISTS admin_key TEXT`);
       let r=await pg.query('SELECT public_key,private_key FROM aktan_push_config WHERE id=1');
       if(!r.rowCount){ const keys=webPush.generateVAPIDKeys(); await pg.query('INSERT INTO aktan_push_config(id,public_key,private_key,created_at) VALUES(1,$1,$2,$3)',[keys.publicKey,keys.privateKey,Date.now()]); pushConfig=keys; }
       else pushConfig={publicKey:r.rows[0].public_key,privateKey:r.rows[0].private_key};
@@ -33,18 +33,34 @@ async function initPush(){
   } catch(e){ webPush=null; console.error('Web Push unavailable:',e.message); }
 }
 
-async function addPushSubscription(token,subscription){
+async function addPushSubscription(token,subscription,adminKey){
   if(!subscription || !subscription.endpoint) throw new Error('Invalid push subscription');
-  if(pg){ await pg.query(`INSERT INTO aktan_push_subscriptions(token,endpoint,subscription,created_at,updated_at) VALUES($1,$2,$3::jsonb,$4,$4) ON CONFLICT(endpoint) DO UPDATE SET token=EXCLUDED.token,subscription=EXCLUDED.subscription,updated_at=EXCLUDED.updated_at`,[token,subscription.endpoint,JSON.stringify(subscription),Date.now()]); }
-  else { db.pushSubscriptions=db.pushSubscriptions||{}; db.pushSubscriptions[subscription.endpoint]={token,subscription,updatedAt:Date.now()}; saveLocalDB(); }
+  const now=Date.now();
+  if(pg){ await pg.query(`INSERT INTO aktan_push_subscriptions(token,admin_key,endpoint,subscription,created_at,updated_at) VALUES($1,$2,$3,$4::jsonb,$5,$5) ON CONFLICT(endpoint) DO UPDATE SET token=EXCLUDED.token,admin_key=EXCLUDED.admin_key,subscription=EXCLUDED.subscription,updated_at=EXCLUDED.updated_at`,[token,adminKey||null,subscription.endpoint,JSON.stringify(subscription),now]); }
+  else { db.pushSubscriptions=db.pushSubscriptions||{}; db.pushSubscriptions[subscription.endpoint]={token,adminKey:adminKey||'',subscription,updatedAt:now}; saveLocalDB(); }
 }
 async function removePushSubscription(endpoint){ if(pg) await pg.query('DELETE FROM aktan_push_subscriptions WHERE endpoint=$1',[endpoint]); else {if(db.pushSubscriptions) delete db.pushSubscriptions[endpoint];saveLocalDB();} }
-async function getPushSubscriptions(token){ if(pg){const r=await pg.query('SELECT endpoint,subscription FROM aktan_push_subscriptions WHERE token=$1',[token]);return r.rows;} return Object.values(db.pushSubscriptions||{}).filter(x=>x.token===token).map(x=>({endpoint:x.subscription.endpoint,subscription:x.subscription})); }
+async function getPushSubscriptions(token,adminKey){
+  if(pg){
+    const r=adminKey
+      ? await pg.query('SELECT endpoint,subscription FROM aktan_push_subscriptions WHERE token=$1 OR admin_key=$2',[token,adminKey])
+      : await pg.query('SELECT endpoint,subscription FROM aktan_push_subscriptions WHERE token=$1',[token]);
+    const seen=new Set(); return r.rows.filter(x=>{if(seen.has(x.endpoint))return false;seen.add(x.endpoint);return true;});
+  }
+  const seen=new Set(); return Object.values(db.pushSubscriptions||{}).filter(x=>(x.token===token)||(adminKey&&x.adminKey===adminKey)).map(x=>({endpoint:x.subscription.endpoint,subscription:x.subscription})).filter(x=>{if(seen.has(x.endpoint))return false;seen.add(x.endpoint);return true;});
+}
 async function notifyNewRegistration(token,r){
-  if(!webPush) return;
-  const list=await getPushSubscriptions(token);
-  const base=process.env.RENDER_EXTERNAL_URL||((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:''); const payload=JSON.stringify({title:'🔔 New Team Registration',body:`${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,url:base+'/?publicToken='+encodeURIComponent(token),tag:'aktan-registration-'+r.id});
-  await Promise.all(list.map(async x=>{try{await webPush.sendNotification(x.subscription,payload);}catch(e){if(e.statusCode===404||e.statusCode===410) await removePushSubscription(x.endpoint);else console.error('Push send failed:',e.message);}}));
+  if(!webPush) return {sent:0,failed:0};
+  const pub=await getPub(token); const list=await getPushSubscriptions(token,pub?.adminKey);
+  const base=process.env.RENDER_EXTERNAL_URL||((process.env.RENDER_EXTERNAL_HOSTNAME)?'https://'+process.env.RENDER_EXTERNAL_HOSTNAME:'');
+  const payload=JSON.stringify({title:'🔔 New Team Registration',body:`${r.team||r.players?.[0]||'New team'}${r.contestTitle?' • '+r.contestTitle:''}`,url:base+'/?publicToken='+encodeURIComponent(token),tag:'aktan-registration-'+r.id});
+  let sent=0,failed=0;
+  await Promise.all(list.map(async x=>{try{await webPush.sendNotification(x.subscription,payload);sent++;}catch(e){failed++;if(e.statusCode===404||e.statusCode===410) await removePushSubscription(x.endpoint);else console.error('Push send failed:',e.statusCode||'',e.message);}}));
+  return {sent,failed,subscriptions:list.length};
+}
+async function pushStatus(token,adminKey){
+  if(pg){const r=await pg.query('SELECT COUNT(*)::int AS n FROM aktan_push_subscriptions WHERE token=$1 OR admin_key=$2',[token,adminKey||'']);return r.rows[0].n;}
+  return Object.values(db.pushSubscriptions||{}).filter(x=>x.token===token||(adminKey&&x.adminKey===adminKey)).length;
 }
 
 
@@ -131,9 +147,11 @@ const server=http.createServer(async (req,res)=>{
       const sw=`self.addEventListener('push',event=>{let d={title:'AKTan Tournament',body:'New registration received',url:'/'};try{if(event.data)d=Object.assign(d,event.data.json())}catch(e){}event.waitUntil(self.registration.showNotification(d.title,{body:d.body,tag:d.tag||'aktan-registration',data:{url:d.url||'/'}}));});self.addEventListener('notificationclick',event=>{event.notification.close();const url=event.notification.data?.url||'/';event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if('focus' in c){c.navigate(url);return c.focus()}}return clients.openWindow(url)}));});`;res.writeHead(200,{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-store','Service-Worker-Allowed':'/'});return res.end(sw);
     }
     if(req.method==='GET' && u.pathname==='/api/push/public-key') return json(res,200,{publicKey:pushConfig?.publicKey||null});
+    m=u.pathname.match(/^\/api\/push\/([^/]+)\/status$/);
+    if(m && req.method==='GET'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});return json(res,200,{ok:true,subscriptions:await pushStatus(m[1],pub.adminKey),pushReady:!!webPush});}
     m=u.pathname.match(/^\/api\/push\/([^/]+)\/subscribe$/);
-    if(m && req.method==='POST'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const b=await readBody(req);if(!webPush)return json(res,503,{error:'Push notifications are not available on this server'});await addPushSubscription(m[1],b.subscription);return json(res,200,{ok:true});}
-    if(req.method==='POST' && u.pathname==='/api/push/test'){const b=await readBody(req);const token=String(b.token||'');const pub=await getPub(token);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const fake={id:'test',team:'Test Notification',contestTitle:'AKTan Push Test',players:[]};await notifyNewRegistration(token,fake);return json(res,200,{ok:true});}
+    if(m && req.method==='POST'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const b=await readBody(req);if(!webPush)return json(res,503,{error:'Push notifications are not available on this server'});await addPushSubscription(m[1],b.subscription,pub.adminKey);return json(res,200,{ok:true,subscriptions:await pushStatus(m[1],pub.adminKey)});}
+    if(req.method==='POST' && u.pathname==='/api/push/test'){const b=await readBody(req);const token=String(b.token||'');const pub=await getPub(token);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const fake={id:'test-'+makeToken(),team:'Test Notification',contestTitle:'AKTan Push Test',players:[]};const result=await notifyNewRegistration(token,fake);return json(res,200,{ok:true,...result});}
     m=u.pathname.match(/^\/api\/public\/([^/]+)\/register$/);
     if(m && req.method==='POST'){
       const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});const b=await readBody(req);
@@ -161,7 +179,7 @@ const server=http.createServer(async (req,res)=>{
       const identity=(team||players[0]).toLowerCase();
       const exists=(pub.state.teams||[]).some(t=>String(t.name||'').trim().toLowerCase()===identity)||pub.registrations.some(r=>String(r.team||r.players?.[0]||'').toLowerCase()===identity);
       if(exists)return json(res,409,{error:'This team/player name is already registered or pending'});
-      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);try{await notifyNewRegistration(token,r);}catch(e){console.error('Registration push notification failed:',e.message);}return json(res,201,{ok:true,id:r.id});
+      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);let push={sent:0,failed:0,subscriptions:0};try{push=await notifyNewRegistration(token,r);}catch(e){console.error('Registration push notification failed:',e.message);}return json(res,201,{ok:true,id:r.id,push});
     }
     m=u.pathname.match(/^\/api\/admin\/([^/]+)\/registrations$/);
     if(m && req.method==='GET'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});return json(res,200,{registrations:pub.registrations});}

@@ -2608,14 +2608,14 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
       if(permission!=='granted'){if(st)st.textContent='⚠ Notification permission was not allowed.';return;}
       const kd=await publicApi('/api/push/public-key'); if(!kd.publicKey)throw new Error('Push service is not configured on server');
       const existing=await reg.pushManager.getSubscription(); const sub=existing||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(kd.publicKey)});
-      await publicApi('/api/push/'+encodeURIComponent(publicToken)+'/subscribe',{method:'POST',headers:{'X-Admin-Key':publicAdminKey},body:JSON.stringify({subscription:sub.toJSON()})});
-      if(st)st.textContent='✅ Registration notifications enabled on this phone.';
+      const saved=await publicApi('/api/push/'+encodeURIComponent(publicToken)+'/subscribe',{method:'POST',headers:{'X-Admin-Key':publicAdminKey},body:JSON.stringify({subscription:sub.toJSON()})});
+      if(st)st.textContent='✅ Registration notifications enabled on this phone.'+(saved.subscriptions?` • ${saved.subscriptions} device subscription${saved.subscriptions===1?'':'s'} active.`:'');
       toast('🔔 Registration notifications enabled');
     }catch(e){if(st)st.textContent='⚠ Notification setup failed: '+e.message;}
   };
   window.testRegistrationNotification=async function(){
     const st=document.getElementById('publicShareStatus'); if(!publicToken||!publicAdminKey){if(st)st.textContent='⚠ Create the public link first.';return;}
-    try{await publicApi('/api/push/test',{method:'POST',headers:{'X-Admin-Key':publicAdminKey},body:JSON.stringify({token:publicToken})});if(st)st.textContent='✅ Test notification sent.';}catch(e){if(st)st.textContent='⚠ Test failed: '+e.message;}
+    try{const d=await publicApi('/api/push/test',{method:'POST',headers:{'X-Admin-Key':publicAdminKey},body:JSON.stringify({token:publicToken})});if(st)st.textContent=d.subscriptions?`✅ Test notification sent • ${d.subscriptions} subscription(s) targeted.`:'⚠ Test sent, but no registered notification device was found.';}catch(e){if(st)st.textContent='⚠ Test failed: '+e.message;}
   };
   function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4),base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/'),raw=atob(base64),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;}
 
