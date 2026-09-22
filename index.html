@@ -4144,115 +4144,99 @@ setTimeout(hooks,700);
 </script>
 </body>
 
-<script id="AKTanPublicControllerV29">
-/* V26.9: authoritative public controller for Mode Groups, Leaderboard and Matches.
-   This layer intentionally runs after the older public UI layers and only controls
-   the three public views requested by the organizer. Admin data/calculation logic is untouched. */
+
+<script id="AKTanPublicControllerV30">
 (function(){
-  'use strict';
-  const E=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const rooms=()=>typeof ensureRooms==='function'?ensureRooms():(Array.isArray(S.publicContests)?S.publicContests:[]);
-  const roomBy=id=>rooms().find(r=>String(r.id)===String(id));
-  const teamsFor=id=>id?(S.teams||[]).filter(t=>String(t.contestId||'')===String(id)):(S.teams||[]);
-  const groupList=()=>Array.isArray(S.modeGroups)?S.modeGroups:[];
-  const groupForRoom=r=>String(r?.gameGroup||((typeof deriveGroup==='function')?deriveGroup(r):'custom'));
-  const groupBy=id=>groupList().find(g=>String(g.id)===String(id));
-  const modeId=()=>window.__aktanV29ModeGroup||'';
-  const selectedRoom=()=>{const L=S.publicLocks||{}; if(L.leaderboard)return L.leaderboardRoom||''; return window.__aktanV29Room!==undefined?window.__aktanV29Room:(S.publicSelectedRoom||'');};
-  const boardMode=()=>{const L=S.publicLocks||{}; if(L.leaderboard)return L.leaderboardMode||'overall'; return window.__aktanV29Board!==undefined?window.__aktanV29Board:(S.publicLeaderboardMode||'overall');};
-  const saveState=()=>{try{if(typeof save==='function')save();}catch(e){}};
+'use strict';
+/* V27.0 FINAL PUBLIC CONTROLLER
+   Only controls the public Mode Groups, Leaderboard and Matches UI.
+   No save()/renderAll() is used by public selectors, so changing a selector
+   cannot reset the public selection or trigger the admin save dialog. */
+const E=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const rooms=()=>typeof ensureRooms==='function'?ensureRooms():(Array.isArray(S.publicContests)?S.publicContests:[]);
+const roomBy=id=>rooms().find(r=>String(r.id)===String(id));
+const groups=()=>Array.isArray(S.modeGroups)?S.modeGroups:[];
+const groupBy=id=>groups().find(g=>String(g.id)===String(id));
+const groupFor=r=>String(r?.gameGroup||((typeof deriveGroup==='function')?deriveGroup(r):'custom'));
+const teamRoom=t=>String(t?.contestId||t?.contestID||t?.roomId||'');
+const teamsFor=id=>id?(S.teams||[]).filter(t=>teamRoom(t)===String(id)):(S.teams||[]);
+const matchCount=()=>Math.max(1,+S.matches||0,Array.isArray(S.schedule)?S.schedule.length:0);
+const locked=()=>S.publicLocks||{};
 
-  function roomCard(r){
-    const n=typeof countApproved==='function'?countApproved(r):teamsFor(r.id).length;
-    const max=Math.max(1,+r.maxSlots||1),left=Math.max(0,max-n);
-    const st=typeof status==='function'?status(r):'OPEN';
-    const g=groupBy(groupForRoom(r));
-    return `<article class="publicCard aktanV29RoomCard" style="margin-bottom:12px">
-      ${r.thumbnail||g?.thumbnail?`<img src="${E(r.thumbnail||g.thumbnail)}" style="width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-bottom:10px" alt="">`:''}
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-        <div><div class="eyebrow">${E(g?.icon||'🎮')} ${E(g?.name||r.category||'Game')}</div><h3 style="margin:3px 0">${E(r.title||'Room')}</h3></div>
-        <span class="statusPill ${st==='LIVE'?'status-live':left===0?'status-locked':'status-upcoming'}">${E(st)}</span>
-      </div>
-      <div class="aktanRoomMeta">
-        <span class="aktanPill">🎯 Match ${+r.matchNumber||1}</span><span class="aktanPill">🗺️ ${E(r.map||'Custom')}</span>
-        <span class="aktanPill">🎮 ${E(r.format||'')}</span><span class="aktanPill">🎟️ ${n}/${max}</span>
-      </div>
-      <div class="publicGrid" style="padding:4px 0"><div class="publicCard"><div class="muted">Prize</div><b>₹${+r.prizePool||0}</b></div><div class="publicCard"><div class="muted">Entry</div><b>₹${+r.entryFee||0}</b></div><div class="publicCard"><div class="muted">Start</div><b>${E(typeof dateText==='function'?dateText(r.startAt):(r.startAt||'Time not set'))}</b></div></div>
-      <div class="small muted">${E(r.rules||'')}</div>
-      <button class="primary" style="margin-top:10px;width:100%" ${left===0?'disabled':''} onclick="registerForPublicRoom('${E(r.id)}')">${left===0?'🔒 Room Full':'📝 Register in this Room'}</button>
-    </article>`;
-  }
+function currentRoom(){const L=locked();if(L.leaderboard)return String(L.leaderboardRoom||'');return window.__aktanV30Room!==undefined?String(window.__aktanV30Room):String(S.publicSelectedRoom||'');}
+function currentBoard(){const L=locked();if(L.leaderboard)return String(L.leaderboardMode||'overall');return window.__aktanV30Board!==undefined?String(window.__aktanV30Board):String(S.publicLeaderboardMode||'overall');}
+function currentMatch(){const L=locked();if(L.matches)return Math.max(0,+L.matchIndex||0);return Math.max(0,+window.__aktanV30Match||0);}
+function groupId(){return String(window.__aktanV30Group||'');}
 
-  function renderModeView(){
-    const box=document.getElementById('pubContestsBox'); if(!box)return;
-    const groups=groupList();
-    const gid=modeId();
-    if(!gid){
-      box.innerHTML=`<div class="aktanGroupGrid">${groups.map(g=>{
-        const rs=rooms().filter(r=>groupForRoom(r)===String(g.id));
-        return `<button type="button" class="aktanModeCard" data-v29-group="${E(g.id)}" style="text-align:center;cursor:pointer;min-height:210px;background:rgba(8,14,24,.88);border:1px solid rgba(0,229,255,.55);border-radius:22px;overflow:hidden;padding:0;color:inherit">
-          ${g.thumbnail?`<img src="${E(g.thumbnail)}" style="width:100%;height:145px;object-fit:cover;display:block" alt="">`:`<div style="height:145px;display:grid;place-items:center;font-size:58px;background:linear-gradient(145deg,#09101a,#111827)">${E(g.icon||'🎮')}</div>`}
-          <div style="padding:13px"><div style="font-size:20px;font-weight:1000">${E(g.icon||'🎮')} ${E(g.name)}</div><div class="muted small">${E(g.description||'')}<br><b style="color:#ffd166">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</b></div></div>
-        </button>`;
-      }).join('')}</div>`;
-      return;
-    }
-    const g=groupBy(gid),rs=rooms().filter(r=>groupForRoom(r)===String(gid)).sort((a,b)=>(+a.matchNumber||1)-(+b.matchNumber||1));
-    box.innerHTML=`<div class="aktanRoomGroupHeader" style="margin-bottom:12px"><div><h3>${E(g?.icon||'🎮')} ${E(g?.name||'Game Mode')}</h3><div class="small muted">${E(g?.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" id="aktanV29BackModes">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCard).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
-    document.getElementById('aktanV29BackModes')?.addEventListener('click',()=>{window.__aktanV29ModeGroup='';renderModeView();});
-  }
+function roomCard(r){
+ const n=typeof countApproved==='function'?countApproved(r):teamsFor(r.id).length;
+ const max=Math.max(1,+r.maxSlots||1),left=Math.max(0,max-n),g=groupBy(groupFor(r));
+ return `<article class="publicCard aktanV30RoomCard">
+ ${r.thumbnail||g?.thumbnail?`<img src="${E(r.thumbnail||g.thumbnail)}" style="width:100%;max-height:190px;object-fit:cover;border-radius:14px;margin-bottom:10px" alt="">`:''}
+ <div style="display:flex;justify-content:space-between;gap:8px"><div><div class="eyebrow">${E(g?.icon||'🎮')} ${E(g?.name||r.category||'Game')}</div><h3 style="margin:3px 0">${E(r.title||'Room')}</h3></div><span class="statusPill">${left?'OPEN':'FULL'}</span></div>
+ <div class="aktanRoomMeta"><span class="aktanPill">🎯 Match ${+r.matchNumber||1}</span><span class="aktanPill">🗺️ ${E(r.map||'Custom')}</span><span class="aktanPill">🎮 ${E(r.format||'')}</span><span class="aktanPill">🎟️ ${n}/${max}</span></div>
+ <div class="publicGrid" style="padding:4px 0"><div class="publicCard"><div class="muted">Prize</div><b>₹${+r.prizePool||0}</b></div><div class="publicCard"><div class="muted">Entry</div><b>₹${+r.entryFee||0}</b></div><div class="publicCard"><div class="muted">Start</div><b>${E(typeof dateText==='function'?dateText(r.startAt):(r.startAt||'Time not set'))}</b></div></div>
+ <div class="small muted">${E(r.rules||'')}</div>
+ <button class="primary" style="margin-top:10px;width:100%" onclick="registerForPublicRoom('${E(r.id)}')" ${left?'':'disabled'}>${left?'📝 Register in this Room':'🔒 Room Full'}</button>
+ </article>`;
+}
 
-  function renderRank(){
-    const sec=document.getElementById('pubRank'),box=document.getElementById('pubRankBox');if(!sec||!box)return;
-    let c=document.getElementById('aktanV29RankControls');
-    if(!c){c=document.createElement('div');c.id='aktanV29RankControls';c.className='publicSelectBar';const hero=sec.querySelector('.publicHero');hero?.insertAdjacentElement('afterend',c);}
-    const rid=selectedRoom(),bm=boardMode(),rs=rooms(),locked=!!(S.publicLocks&&S.publicLocks.leaderboard);
-    c.innerHTML=`<div class="publicSelectGrid"><div><label>Room / Contest</label><select id="aktanV29RoomSelect" ${locked?'disabled':''}><option value="">🌐 All Rooms / Overall</option>${rs.map(r=>`<option value="${E(r.id)}">🎮 ${E(r.title)}</option>`).join('')}</select></div><div><label>Leaderboard</label><select id="aktanV29BoardSelect" ${locked?'disabled':''}><option value="overall">🏆 Overall Leaderboard</option>${Array.from({length:Math.max(0,+S.matches||0)},(_,i)=>`<option value="match:${i}">🎯 Match ${i+1}</option>`).join('')}<option value="killers">💀 Kill Leaderboard</option></select></div></div>${locked?'<div class="aktanLockBanner">🔒 Leaderboard display locked by organizer</div>':''}`;
-    const rsel=document.getElementById('aktanV29RoomSelect'),bsel=document.getElementById('aktanV29BoardSelect');
-    rsel.value=rid||'';bsel.value=bm;
-    rsel.onchange=()=>{window.__aktanV29Room=rsel.value;S.publicSelectedRoom=rsel.value;S.publicLeaderboardContestId=rsel.value;window.__aktanPublicRoomId=rsel.value||'all';saveState();renderRank();};
-    bsel.onchange=()=>{window.__aktanV29Board=bsel.value;S.publicLeaderboardMode=bsel.value;renderRank();};
+function renderModes(){
+ const box=document.getElementById('pubContestsBox');if(!box)return;
+ const list=groups();const gid=groupId();
+ if(!gid){
+  box.innerHTML=`<div class="aktanGroupGrid">${list.map(g=>{const rs=rooms().filter(r=>groupFor(r)===String(g.id));return `<button type="button" class="aktanV30ModeCard" onclick="window.aktanV30SelectGroup('${E(g.id)}')">
+   ${g.thumbnail?`<img src="${E(g.thumbnail)}" alt="" class="aktanV30ModeImg">`:`<div class="aktanV30ModeIcon">${E(g.icon||'🎮')}</div>`}
+   <div class="aktanV30ModeBody"><div class="aktanV30ModeTitle">${E(g.icon||'🎮')} ${E(g.name)}</div><div class="muted small">${E(g.description||'')}<br><b>${rs.length} match${rs.length===1?'':'es'} available → Tap to view</b></div></div>
+  </button>`}).join('')}</div>`;
+ }else{
+  const g=groupBy(gid)||{name:'Game Mode',icon:'🎮',description:''};const rs=rooms().filter(r=>groupFor(r)===gid).sort((a,b)=>(+a.matchNumber||1)-(+b.matchNumber||1));
+  box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${E(g.icon||'🎮')} ${E(g.name)}</h3><div class="small muted">${E(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanV30SelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCard).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
+ }
+}
+window.aktanV30SelectGroup=function(id){window.__aktanV30Group=String(id||'');renderModes();const s=document.getElementById('pubContests');if(s)s.scrollIntoView({behavior:'smooth',block:'start'});};
 
-    const ts=teamsFor(rid); let rows=[];
-    if(bm==='killers'){
-      const all=playerStats().filter(x=>ts.some(t=>t.id===x.teamId||t.name===x.team));
-      box.innerHTML=all.length?all.sort((a,b)=>b.kills-a.kills).map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.logo||brandFallback()}" alt=""><div><b>${E(x.player)}</b><div class="muted small">${E(x.team)}</div></div></div><div class="premiumPoints">${+x.kills||0}</div></div>`).join(''):'<div class="publicEmpty">No player results found for this selection.</div>';
-    }else if(bm==='overall'){
-      rows=stats().filter(x=>ts.some(t=>t.id===x.t.id)).map(x=>({t:x.t,total:x.total,kills:x.kills,place:x.place}));
-      box.innerHTML=rows.length?rows.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${E(x.t.name)}</b><div class="muted small">${x.kills} kill pts • ${x.place} placement</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this selection.</div>';
-    }else{
-      const mi=Math.max(0,+String(bm).split(':')[1]||0);
-      rows=ts.map(t=>{if(typeof syncMatches==='function')syncMatches(t);const m=t.matches?.[mi]||{kills:[],pos:12};const k=(m.kills||[]).reduce((a,b)=>a+(+b||0),0);const p=PLACE[(+m.pos||12)-1]||0;return{t,k,p,total:k*(+S.killPoint||1)+p,pos:+m.pos||12};}).sort((a,b)=>b.total-a.total||b.k-a.k||a.pos-b.pos);
-      box.innerHTML=rows.length?rows.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${E(x.t.name)}</b><div class="muted small">Position #${x.pos} • ${x.k} eliminations</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this selection.</div>';
-    }
-    const h=sec.querySelector('.publicHero h2');if(h)h.textContent=bm==='overall'?'🏆 Leaderboard':bm==='killers'?'💀 Kill Leaderboard':'🎯 Match '+(+String(bm).split(':')[1]+1)+' Leaderboard';
-  }
+function renderRank(){
+ const sec=document.getElementById('pubRank'),box=document.getElementById('pubRankBox');if(!sec||!box)return;
+ const L=locked(),rid=currentRoom(),bm=currentBoard(),rs=rooms(),mc=matchCount();
+ let bar=document.getElementById('aktanV30RankControls');if(!bar){bar=document.createElement('div');bar.id='aktanV30RankControls';bar.className='publicSelectBar';const hero=sec.querySelector('.publicHero');if(hero)hero.insertAdjacentElement('afterend',bar);else sec.insertBefore(bar,box);}
+ bar.innerHTML=`<div class="publicSelectGrid"><div><label>Room / Contest</label><select id="aktanV30RoomSelect" ${L.leaderboard?'disabled':''}><option value="">🌐 All Rooms / Overall</option>${rs.map(r=>`<option value="${E(r.id)}">🎮 ${E(r.title)}</option>`).join('')}</select></div><div><label>Leaderboard</label><select id="aktanV30BoardSelect" ${L.leaderboard?'disabled':''}><option value="overall">🏆 Overall Leaderboard</option>${Array.from({length:mc},(_,i)=>`<option value="match:${i}">🎯 Match ${i+1}</option>`).join('')}<option value="killers">💀 Kill Leaderboard</option></select></div></div>${L.leaderboard?'<div class="aktanLockBanner">🔒 Leaderboard display locked by organizer</div>':''}`;
+ const rsel=document.getElementById('aktanV30RoomSelect'),bsel=document.getElementById('aktanV30BoardSelect');rsel.value=rid;bsel.value=bm;
+ rsel.onchange=function(){window.__aktanV30Room=this.value;S.publicSelectedRoom=this.value;S.publicLeaderboardContestId=this.value;window.__aktanPublicRoomId=this.value||'all';renderRank();};
+ bsel.onchange=function(){window.__aktanV30Board=this.value;S.publicLeaderboardMode=this.value;window.__aktanPublicBoard=this.value;renderRank();};
+ const ts=teamsFor(rid);let rows=[];
+ if(bm==='killers'){
+  const all=typeof playerStats==='function'?playerStats().filter(x=>ts.some(t=>t.id===x.teamId||t.name===x.team)):[];
+  box.innerHTML=all.length?all.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.logo||brandFallback()}" alt=""><div><b>${E(x.player)}</b><div class="muted small">${E(x.team)}</div></div></div><div class="premiumPoints">${+x.kills||0}</div></div>`).join(''):'<div class="publicEmpty">No player results found for this selection.</div>';
+ }else if(bm==='overall'){
+  const st=typeof stats==='function'?stats().filter(x=>ts.some(t=>t.id===x.t.id)):[];
+  box.innerHTML=st.length?st.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${E(x.t.name)}</b><div class="muted small">${x.kills} kill pts • ${x.place} placement</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this selection.</div>';
+ }else{
+  const mi=Math.max(0,+String(bm).split(':')[1]||0);
+  rows=ts.map(t=>{if(typeof syncMatches==='function')syncMatches(t);const m=t.matches?.[mi]||{kills:[],pos:12};const k=(m.kills||[]).reduce((a,b)=>a+(+b||0),0);const p=PLACE[(+m.pos||12)-1]||0;return {t,k,p,total:k*(+S.killPoint||1)+p,pos:+m.pos||12};}).sort((a,b)=>b.total-a.total||b.k-a.k||a.pos-b.pos);
+  box.innerHTML=rows.length?rows.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${E(x.t.name)}</b><div class="muted small">Position #${x.pos} • ${x.k} eliminations</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this selection.</div>';
+ }
+ const h=sec.querySelector('.publicHero h2');if(h)h.textContent=bm==='overall'?'🏆 Leaderboard':bm==='killers'?'💀 Kill Leaderboard':'🎯 Match '+(+String(bm).split(':')[1]+1)+' Leaderboard';
+}
 
-  function renderMatches(){
-    const sec=document.getElementById('pubMatchesPage'),box=document.getElementById('pubMatchesBox');if(!sec||!box)return;
-    let bar=document.getElementById('aktanV29MatchControls');if(!bar){bar=document.createElement('div');bar.id='aktanV29MatchControls';bar.className='publicSelectBar';const hero=sec.querySelector('.publicHero');hero?.insertAdjacentElement('afterend',bar);}
-    const count=Math.max(1,+S.matches||((S.schedule||[]).length)||1),locked=!!(S.publicLocks&&S.publicLocks.matches),idx=Math.max(0,Math.min(count-1,locked?(+S.publicLocks.matchIndex||0):(+window.__aktanV29Match||0))),sched=S.schedule||[];
-    bar.innerHTML=`<div class="publicSelectGrid"><div><label>🎮 Select Match</label><select id="aktanV29MatchSelect" ${locked?'disabled':''}>${Array.from({length:count},(_,i)=>`<option value="${i}">🎯 Match ${i+1}${sched[i]?.map?' • '+E(sched[i].map):''}</option>`).join('')}</select></div><div><label>Status</label><div class="notice" style="min-height:44px;display:flex;align-items:center">${E(sched[idx]?.status||'Upcoming')}</div></div></div>${locked?'<div class="aktanLockBanner">🔒 Match display locked by organizer</div>':''}`;
-    const sel=document.getElementById('aktanV29MatchSelect');sel.value=String(idx);sel.onchange=()=>{window.__aktanV29Match=+sel.value||0;renderMatches();};
-    const m=sched[idx];
-    box.innerHTML=m?`<div class="publicCard"><div style="display:flex;justify-content:space-between;gap:8px"><h3 style="margin:0">🎯 Match ${idx+1}</h3><span class="statusPill">${E(m.status||'Upcoming')}</span></div><div class="publicGrid" style="padding:12px 0"><div class="publicCard"><div class="muted">Map</div><b>${E(m.map||'Random')}</b></div><div class="publicCard"><div class="muted">Match Number</div><b>${idx+1}</b></div></div>${m.note?`<div class="notice">${E(m.note)}</div>`:''}</div>`:'<div class="empty">No match schedule.</div>';
-  }
-
-  function refresh(){
-    if(!Array.isArray(S.modeGroups)||!S.modeGroups.length)return;
-    renderModeView();renderRank();renderMatches();
-  }
-  window.aktanSelectGroup=function(id){window.__aktanV29ModeGroup=id||'';renderModeView();document.getElementById('pubContests')?.scrollIntoView({behavior:'smooth',block:'start'});};
-
-  const oldRPA=window.renderPublicApp;
-  window.renderPublicApp=function(){if(typeof oldRPA==='function')oldRPA.apply(this,arguments);setTimeout(refresh,20);setTimeout(refresh,150);};
-  const oldPS=window.publicSection;
-  window.publicSection=function(id){if(typeof oldPS==='function')oldPS.apply(this,arguments);setTimeout(refresh,20);setTimeout(refresh,150);};
-  document.addEventListener('click',e=>{const card=e.target.closest?.('[data-v29-group]');if(card){e.preventDefault();window.aktanSelectGroup(card.getAttribute('data-v29-group')||'');}},true);
-  document.addEventListener('DOMContentLoaded',()=>{setTimeout(refresh,80);setTimeout(refresh,300);});
-  setTimeout(refresh,120);setTimeout(refresh,500);
+function renderMatches(){
+ const sec=document.getElementById('pubMatchesPage'),box=document.getElementById('pubMatchesBox');if(!sec||!box)return;
+ const L=locked(),mc=matchCount(),idx=Math.max(0,Math.min(mc-1,currentMatch())),sched=Array.isArray(S.schedule)?S.schedule:[];
+ let bar=document.getElementById('aktanV30MatchControls');if(!bar){bar=document.createElement('div');bar.id='aktanV30MatchControls';bar.className='publicSelectBar';const hero=sec.querySelector('.publicHero');if(hero)hero.insertAdjacentElement('afterend',bar);else sec.insertBefore(bar,box);}
+ bar.innerHTML=`<div class="publicSelectGrid"><div><label>🎮 Select Match</label><select id="aktanV30MatchSelect" ${L.matches?'disabled':''}>${Array.from({length:mc},(_,i)=>`<option value="${i}">🎯 Match ${i+1}${sched[i]?.map?' • '+E(sched[i].map):''}</option>`).join('')}</select></div><div><label>Status</label><div class="notice" style="min-height:44px;display:flex;align-items:center">${E(sched[idx]?.status||'Upcoming')}</div></div></div>${L.matches?'<div class="aktanLockBanner">🔒 Match display locked by organizer</div>':''}`;
+ const sel=document.getElementById('aktanV30MatchSelect');sel.value=String(idx);sel.onchange=function(){window.__aktanV30Match=+this.value||0;renderMatches();};
+ const m=sched[idx];box.innerHTML=m?`<div class="publicCard"><div style="display:flex;justify-content:space-between;gap:8px"><h3 style="margin:0">🎯 Match ${idx+1}</h3><span class="statusPill">${E(m.status||'Upcoming')}</span></div><div class="publicGrid" style="padding:12px 0"><div class="publicCard"><div class="muted">Map</div><b>${E(m.map||'Random')}</b></div><div class="publicCard"><div class="muted">Match Number</div><b>${idx+1}</b></div></div>${m.note?`<div class="notice">${E(m.note)}</div>`:''}</div>`:'<div class="empty">No match schedule.</div>';
+}
+function refresh(){if(typeof ensureMG==='function')ensureMG();if(!Array.isArray(S.modeGroups)||!S.modeGroups.length)return;renderModes();renderRank();renderMatches();}
+const oldRPA=window.renderPublicApp;
+window.renderPublicApp=function(){if(typeof oldRPA==='function')oldRPA.apply(this,arguments);setTimeout(refresh,0);setTimeout(refresh,80);};
+const oldPS=window.publicSection;
+window.publicSection=function(id){if(typeof oldPS==='function')oldPS.apply(this,arguments);setTimeout(refresh,0);setTimeout(refresh,80);};
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(refresh,80);setTimeout(refresh,250);});
+setTimeout(refresh,100);setTimeout(refresh,500);
 })();
 </script>
+
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
 /* V14: premium podium = 2nd left, 1st center, 3rd right */
