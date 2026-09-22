@@ -1214,13 +1214,6 @@ window.quickReadScreenshot=async function(q){
   color:var(--master-accent,#ffb000) !important;
 }
 </style>
-
-<style id="AKTanPublicModeClickFixV2">
-/* Public game-mode cards: image/overlay must never intercept the button tap. */
-#publicApp .aktanGroupCard{display:block;width:100%;pointer-events:auto!important;touch-action:manipulation!important;-webkit-tap-highlight-color:transparent;}
-#publicApp .aktanGroupCard::before,#publicApp .aktanGroupCard::after,#publicApp .aktanGroupCard img,#publicApp .aktanGroupCard .aktanGroupContent{pointer-events:none!important;}
-#publicApp .aktanGroupCard .aktanGroupContent{position:relative;z-index:2;}
-</style>
 </head>
 <body>
 <header><h1>AKTan Tournament pointcalc</h1><div class="sub">Professional Free Fire Tournament Manager</div></header>
@@ -3880,11 +3873,11 @@ window.previewOCRImages=function(e){
 .aktanSocialBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px auto 12px;max-width:1120px}
 .aktanSocialBar a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text);padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-weight:800;font-size:12px}
 .aktanGroupGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
-.aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;pointer-events:auto!important;touch-action:manipulation!important;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color;z-index:1}
+.aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color}
 .aktanGroupCard:hover{transform:translateY(-2px);border-color:rgba(255,176,0,.55)}
-.aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46;pointer-events:none!important}
-.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72));pointer-events:none!important}
-.aktanGroupContent{position:relative;z-index:2;padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none}
+.aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46}
+.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72))}
+.aktanGroupContent{position:relative;z-index:1;padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}
 .aktanGroupContent .title{font-size:21px;font-weight:950;letter-spacing:.3px}
 .aktanGroupContent .desc{color:#c9d2e2;font-size:12px;margin-top:4px}
 .aktanGroupContent .count{margin-top:8px;font-size:12px;color:#ffd36a;font-weight:800}
@@ -3900,6 +3893,9 @@ window.previewOCRImages=function(e){
 .aktanLockBanner{padding:11px 13px;border-radius:13px;background:rgba(255,176,0,.08);border:1px solid rgba(255,176,0,.22);margin:8px 0;font-size:12px;font-weight:800}
 .aktanSocialEdit{font-size:12px;color:var(--muted);margin-top:4px}
 @media(max-width:700px){.aktanModeGrid,.aktanGroupGrid,.aktanRoomGrid,.aktanSocialGrid{grid-template-columns:1fr}}
+/* Public mode cards: never let an image/overlay or mobile gesture swallow the tap. */
+.aktanGroupCard{position:relative;z-index:2;cursor:pointer;touch-action:manipulation;pointer-events:auto!important}
+.aktanGroupCard *{pointer-events:none}
 </style>
 
 
@@ -4043,7 +4039,7 @@ function renderAdminStudioControls(){
 }
 function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
- const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" data-aktan-group-id="${escMG(g.id)}" onclick="window.aktanSelectGroup('${escMG(g.id)}')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
+ const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" data-aktan-mode-id="${escMG(g.id)}" aria-label="Open ${escMG(g.name)} rooms">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4055,6 +4051,7 @@ function roomCardHTML(r){
 }
 function renderPublicMG(){
  ensureMG();const box=document.getElementById('pubContestsBox');if(!box)return;
+ bindPublicModeClicks();
  const selected=window.__aktanMGSelectedGroup||'';
  if(!selected){
    box.innerHTML=`<div class="aktanGroupGrid">${ensureMG().map(groupCardHTML).join('')}</div><div class="notice">💡 Select a game mode above to see only its rooms and matches.</div>`;
@@ -4064,22 +4061,33 @@ function renderPublicMG(){
  }
 }
 window.aktanSelectGroup=function(id){
- window.__aktanMGSelectedGroup=String(id||'');
+ const next=String(id||'');
+ if(!next){window.__aktanMGSelectedGroup='';renderPublicMG();return;}
+ const exists=groupById(next);
+ if(!exists)return;
+ window.__aktanMGSelectedGroup=next;
  renderPublicMG();
- const sec=document.getElementById('pubContests');
- if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+ const section=document.getElementById('pubContests');
+ if(section) section.scrollIntoView({behavior:'smooth',block:'start'});
 };
 function bindPublicModeClicks(){
- if(window.__aktanPublicModeClicksBound)return;
- window.__aktanPublicModeClicksBound=true;
- document.addEventListener('click',function(ev){
-   const el=ev.target&&ev.target.closest?ev.target.closest('.aktanGroupCard'):null;
-   if(!el)return;
-   const id=el.getAttribute('data-aktan-group-id');
-   if(id){
+ const box=document.getElementById('pubContestsBox');
+ if(!box||box.dataset.aktanModeClickBound==='1')return;
+ box.dataset.aktanModeClickBound='1';
+ box.addEventListener('click',function(ev){
+   const card=ev.target.closest?.('[data-aktan-mode-id]');
+   if(!card||!box.contains(card))return;
+   ev.preventDefault();
+   ev.stopPropagation();
+   window.aktanSelectGroup(card.getAttribute('data-aktan-mode-id')||'');
+ },true);
+ box.addEventListener('pointerup',function(ev){
+   const card=ev.target.closest?.('[data-aktan-mode-id]');
+   if(!card||!box.contains(card))return;
+   if(ev.pointerType==='touch'){
      ev.preventDefault();
      ev.stopPropagation();
-     window.aktanSelectGroup(id);
+     window.aktanSelectGroup(card.getAttribute('data-aktan-mode-id')||'');
    }
  },true);
 }
@@ -4111,7 +4119,7 @@ function addLockCSS(){
  if(document.getElementById('aktanLockCSS'))return;const st=document.createElement('style');st.id='aktanLockCSS';st.textContent='.aktanLeaderboardLocked #pubRank .publicSelectBar,.aktanLeaderboardLocked #pubHome .publicSelectBar{display:none!important}.aktanMatchesLocked #pubMatchesPage .publicHero+*{}';document.head.appendChild(st);
 }
 function hooks(){
- ensureMG();addLockCSS();bindPublicModeClicks();adminPanel();addRoomFields();wrapRoomFns();
+ ensureMG();addLockCSS();adminPanel();addRoomFields();wrapRoomFns();
  const btn=document.getElementById('aktanAddCustomGroup');if(btn)btn.onclick=addCustomGroup;
  const oldRPA=window.renderPublicApp;if(!window.__aktanMGRenderWrapped){
    window.__aktanMGRenderWrapped=true;
