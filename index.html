@@ -3922,7 +3922,7 @@ window.previewOCRImages=function(e){
 .aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color}
 .aktanGroupCard:hover{transform:translateY(-2px);border-color:rgba(255,176,0,.55)}
 .aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46}
-.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72))}
+.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72));pointer-events:none!important}
 .aktanGroupContent{position:relative;z-index:1;padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}
 .aktanGroupContent .title{font-size:21px;font-weight:950;letter-spacing:.3px}
 .aktanGroupContent .desc{color:#c9d2e2;font-size:12px;margin-top:4px}
@@ -4255,4 +4255,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #publicApp #pubRegister, #publicApp #pubRegister *{pointer-events:auto !important;}
 #publicApp #pubRegister input, #publicApp #pubRegister select, #publicApp #pubRegister button, #publicApp #pubRegister label{position:relative !important;z-index:501 !important;touch-action:manipulation !important;}
 #publicApp #pubRegister input[type="file"]{display:block !important;opacity:1 !important;visibility:visible !important;cursor:pointer !important;}
+</style>
+<style id="AKTanV27_5ModeClickFix">
+/* FINAL: decorative mode-card layers must never intercept touch/click events. */
+#publicApp .aktanGroupCard,
+#publicApp .aktanV31Mode{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;pointer-events:auto!important;}
+#publicApp .aktanGroupCard::before,
+#publicApp .aktanGroupCard::after,
+#publicApp .aktanGroupCard img,
+#publicApp .aktanGroupContent{pointer-events:none!important;}
+#publicApp .aktanGroupCard .aktanGroupContent{position:relative;z-index:2;}
 </style>
