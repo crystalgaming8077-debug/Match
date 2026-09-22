@@ -4080,7 +4080,7 @@ function renderAdminStudioControls(){
 }
 function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
- const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" onclick="window.aktanSelectGroup('${escMG(g.id)}')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
+ const rs=groupRooms(g.id);return `<a class="aktanGroupCard" href="#aktan-mode-${escMG(g.id)}" role="button" data-aktan-mode-id="${escMG(g.id)}">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></a>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4100,7 +4100,20 @@ function renderPublicMG(){
    box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3><div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanSelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
  }
 }
-window.aktanSelectGroup=function(id){window.__aktanMGSelectedGroup=id||'';renderPublicMG();document.getElementById('pubContests')?.scrollIntoView({behavior:'smooth',block:'start'});};
+window.aktanSelectGroup=function(id){
+ const next=String(id||'').trim();
+ if(next && !ensureMG().some(x=>String(x.id)===next))return false;
+ window.__aktanMGSelectedGroup=next;
+ try{
+   const hash=next?'#aktan-mode-'+encodeURIComponent(next):'';
+   if(location.hash!==hash) history.replaceState(null,'',location.pathname+location.search+hash);
+ }catch(e){}
+ const box=document.getElementById('pubContestsBox');
+ if(!box)return false;
+ renderPublicMG();
+ return false;
+};
+
 function publicOverlay(){
  const app=document.getElementById('publicApp');if(!app)return;
  let top=app.querySelector('#aktanPublicExtras');if(!top){top=document.createElement('div');top.id='aktanPublicExtras';const anchor=app.querySelector('.publicTop');anchor?.insertAdjacentElement('afterend',top);}
@@ -4128,6 +4141,34 @@ function enforceLocks(){
 function addLockCSS(){
  if(document.getElementById('aktanLockCSS'))return;const st=document.createElement('style');st.id='aktanLockCSS';st.textContent='.aktanLeaderboardLocked #pubRank .publicSelectBar,.aktanLeaderboardLocked #pubHome .publicSelectBar{display:none!important}.aktanMatchesLocked #pubMatchesPage .publicHero+*{}';document.head.appendChild(st);
 }
+/* AKTanModeGroupCaptureFix: handle mode taps at document level even if the room box is re-rendered. */
+(function(){
+  if(window.__aktanModeGroupCaptureFix)return;
+  window.__aktanModeGroupCaptureFix=true;
+  const findCard=e=>{
+    const t=e.target;
+    return t&&t.closest?t.closest('[data-aktan-mode-id]'):null;
+  };
+  const activate=e=>{
+    const card=findCard(e);
+    if(!card)return;
+    const host=document.getElementById('pubContestsBox');
+    if(!host || !host.contains(card))return;
+    const id=card.getAttribute('data-aktan-mode-id');
+    if(!id || typeof window.aktanSelectGroup!=='function')return;
+    if(e.type==='touchend')e.preventDefault();
+    e.stopPropagation();
+    window.aktanSelectGroup(id);
+  };
+  document.addEventListener('click',activate,true);
+  document.addEventListener('touchend',activate,{capture:true,passive:false});
+  document.addEventListener('pointerup',activate,true);
+  window.addEventListener('hashchange',()=>{
+    const m=String(location.hash||'').match(/^#aktan-mode-(.+)$/);
+    if(m&&typeof window.aktanSelectGroup==='function')window.aktanSelectGroup(decodeURIComponent(m[1]));
+  });
+})();
+
 function hooks(){
  ensureMG();addLockCSS();adminPanel();addRoomFields();wrapRoomFns();
  const btn=document.getElementById('aktanAddCustomGroup');if(btn)btn.onclick=addCustomGroup;
