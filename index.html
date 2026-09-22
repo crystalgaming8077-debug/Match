@@ -4165,3 +4165,110 @@ setTimeout(hooks,700);
 #publicApp #pubRegister input, #publicApp #pubRegister select, #publicApp #pubRegister button, #publicApp #pubRegister label{position:relative !important;z-index:501 !important;touch-action:manipulation !important;}
 #publicApp #pubRegister input[type="file"]{display:block !important;opacity:1 !important;visibility:visible !important;cursor:pointer !important;}
 </style>
+
+<script id="AKTanPublicManualControlsV26_8">
+/* V26.8 public fixes: mode rooms + public leaderboard/match manual controls. */
+(function(){
+'use strict';
+const rooms=()=>typeof ensureRooms==='function'?ensureRooms():(Array.isArray(S.publicContests)?S.publicContests:[]);
+const roomBy=id=>rooms().find(r=>String(r.id)===String(id));
+const escv=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const selectedRoom=()=>window.__aktanPublicRoomId&&window.__aktanPublicRoomId!=='all'?window.__aktanPublicRoomId:(S.publicSelectedRoom||'');
+const teamsFor=id=>id?(S.teams||[]).filter(t=>String(t.contestId||'')===String(id)):(S.teams||[]);
+
+/* Fix Game Mode Groups: rooms live in ensureRooms(), not necessarily S.publicContests. */
+if(typeof window.groupRooms==='undefined'){}
+try{
+  /* Rebind the Mode Groups' internal behavior through the public renderer. */
+  window.__aktanV268GroupRooms=function(id){return rooms().filter(r=>String(r.gameGroup||'')===String(id)||(!r.gameGroup&&typeof deriveGroup==='function'&&String(deriveGroup(r))===String(id)));};
+  if(typeof window.aktanSelectGroup==='function'){
+    const oldGroup=window.aktanSelectGroup;
+    window.aktanSelectGroup=function(id){return oldGroup(id);};
+  }
+}catch(e){}
+
+function fixModeGroupRooms(){
+  const box=document.getElementById('pubContestsBox');
+  const selected=window.__aktanMGSelectedGroup||'';
+  if(!box||!selected)return;
+  const groups=Array.isArray(S.modeGroups)?S.modeGroups:[];
+  const g=groups.find(x=>String(x.id)===String(selected))||groups.find(x=>x.id==='custom');
+  if(!g)return;
+  const rs=rooms().filter(r=>String(r.gameGroup|| (typeof deriveGroup==='function'?deriveGroup(r):'custom'))===String(selected));
+  const grid=rs.map(r=>typeof roomCardHTML==='function'?roomCardHTML(r):'').join('');
+  box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${escv(g.icon||'🎮')} ${escv(g.name)}</h3><div class="small muted">${escv(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanSelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${grid}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
+}
+
+function renderManualLeaderboard(){
+  const box=document.getElementById('pubRankBox');if(!box)return;
+  const rid=selectedRoom();
+  const teams=teamsFor(rid);
+  const mode=window.__aktanPublicBoard||'overall';
+  let rows=[];
+  if(mode==='killers'){
+    const all=playerStats().filter(x=>teams.some(t=>t.id===x.teamId||t.name===x.team));
+    box.innerHTML=all.length?all.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.logo||brandFallback()}" alt=""><div><b>${escv(x.player)}</b><div class="muted small">${escv(x.team)}</div></div></div><div class="premiumPoints">${+x.kills||0}</div></div>`).join(''):'<div class="publicEmpty">No player results found for this room yet.</div>';
+  }else if(mode==='overall'){
+    rows=stats().filter(x=>teams.some(t=>t.id===x.t.id)).map(x=>({t:x.t,total:x.total,kills:x.kills,place:x.place}));
+    box.innerHTML=rows.length?rows.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${escv(x.t.name)}</b><div class="muted small">${x.kills} kill pts • ${x.place} placement</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this room yet.</div>';
+  }else{
+    const m=Math.max(0,+String(mode).split(':')[1]||0);
+    rows=teams.map(t=>{syncMatches(t);const r=t.matches[m]||{kills:[],pos:12};const kills=(r.kills||[]).reduce((a,b)=>a+(+b||0),0);const place=PLACE[(+r.pos||12)-1]||0;return {t,kills,place,total:kills*(+S.killPoint||1)+place,pos:+r.pos||12};}).sort((a,b)=>b.total-a.total||b.kills-a.kills||a.pos-b.pos);
+    box.innerHTML=rows.length?rows.map((x,i)=>`<div class="premiumRankRow"><div class="premiumRankNo">#${i+1}</div><div class="premiumRankTeam"><img src="${x.t.logo||brandFallback()}" alt=""><div><b>${escv(x.t.name)}</b><div class="muted small">Position #${x.pos} • ${x.kills} eliminations</div></div></div><div class="premiumPoints">${x.total}</div></div>`).join(''):'<div class="publicEmpty">No registered teams found for this room yet.</div>';
+  }
+  const h=document.querySelector('#pubRank .publicHero h2');
+  if(h)h.textContent=mode==='overall'?'🏆 Leaderboard':mode==='killers'?'💀 Kill Leaderboard':'🎯 Match '+(+String(mode).split(':')[1]+1)+' Leaderboard';
+}
+
+function ensurePublicMatchBar(){
+  const sec=document.getElementById('pubMatchesPage');if(!sec)return;
+  let bar=document.getElementById('aktanPublicMatchSelectBar');
+  if(!bar){
+    bar=document.createElement('div');bar.id='aktanPublicMatchSelectBar';bar.className='publicSelectBar';
+    const hero=sec.querySelector('.publicHero');
+    if(hero)hero.insertAdjacentElement('afterend',bar);else sec.insertBefore(bar,sec.firstChild);
+  }
+  const count=Math.max(1,+S.matches||((S.schedule||[]).length)||1);
+  const current=Math.max(0,Math.min(count-1,+window.__aktanPublicMatchIndex||0));
+  bar.innerHTML=`<div class="publicSelectGrid"><div><label>🎮 Select Match</label><select id="aktanPublicMatchSelect">${Array.from({length:count},(_,i)=>{const m=(S.schedule||[])[i]||{};return `<option value="${i}">🎯 Match ${i+1}${m.map?' • '+escv(m.map):''}</option>`}).join('')}</select></div><div><label>Status</label><div class="notice" style="min-height:44px;display:flex;align-items:center">${escv((S.schedule||[])[current]?.status||'Upcoming')}</div></div></div>`;
+  const sel=document.getElementById('aktanPublicMatchSelect');
+  if(sel){sel.value=String(current);sel.onchange=function(){window.__aktanPublicMatchIndex=+this.value||0;renderPublicMatchesManual();};}
+  const locked=!!S.publicLocks?.matches;
+  bar.style.display=locked?'none':'';
+}
+function renderPublicMatchesManual(){
+  const box=document.getElementById('pubMatchesBox');if(!box)return;
+  const locked=!!S.publicLocks?.matches;
+  let idx=Math.max(0,+window.__aktanPublicMatchIndex||0);
+  if(locked)idx=Math.max(0,+S.publicLocks.matchIndex||0);
+  const m=(S.schedule||[])[idx];
+  if(!m){box.innerHTML='<div class="publicEmpty">No match schedule.</div>';ensurePublicMatchBar();return;}
+  box.innerHTML=`<div class="publicCard" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>🎯 Match ${idx+1}</b><span class="statusPill ${m.status==='Live'?'status-live':m.status==='Completed'||m.status==='Locked'?'status-locked':'status-upcoming'}">${escv(m.status||'Upcoming')}</span></div><div class="publicGrid" style="padding:10px 0"><div class="publicCard"><div class="muted">Map</div><b>${escv(m.map||'Random')}</b></div><div class="publicCard"><div class="muted">Match</div><b>${idx+1}</b></div></div>${m.note?`<div class="small muted">${escv(m.note)}</div>`:''}</div>${locked?'<div class="aktanLockBanner">🔒 Match display locked by organizer</div>':''}`;
+  ensurePublicMatchBar();
+}
+
+function finalPublicRefresh(){
+  /* The mode group renderer may have been built from the wrong room collection. */
+  fixModeGroupRooms();
+  renderManualLeaderboard();
+  ensurePublicMatchBar();
+  renderPublicMatchesManual();
+  const L=S.publicLocks||{};
+  if(L.leaderboard){
+    window.__aktanPublicBoard=L.leaderboardMode||'overall';
+    window.__aktanPublicRoomId=L.leaderboardRoom||'all';
+  }
+  if(L.matches)window.__aktanPublicMatchIndex=Math.max(0,+L.matchIndex||0);
+  /* Re-render once more after applying a lock so the public view follows admin settings. */
+  if(L.leaderboard)renderManualLeaderboard();
+  if(L.matches)renderPublicMatchesManual();
+}
+
+const oldRPA=window.renderPublicApp;
+window.renderPublicApp=function(){if(typeof oldRPA==='function')oldRPA.apply(this,arguments);setTimeout(finalPublicRefresh,0);};
+const oldPS=window.publicSection;
+window.publicSection=function(id){if(typeof oldPS==='function')oldPS.apply(this,arguments);setTimeout(finalPublicRefresh,0);};
+setTimeout(finalPublicRefresh,120);
+})();
+</script>
+
