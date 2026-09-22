@@ -4080,7 +4080,7 @@ function renderAdminStudioControls(){
 }
 function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
- const rs=groupRooms(g.id);return `<a class="aktanGroupCard" href="#aktan-mode-${escMG(g.id)}" role="button" data-aktan-mode-id="${escMG(g.id)}">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></a>`;
+ const rs=groupRooms(g.id);return `<a class="aktanGroupCard" href="#aktan-mode-${escMG(g.id)}" role="button" data-aktan-mode-id="${escMG(g.id)}" onclick="window.aktanSelectGroup(\'${escMG(g.id)}\')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></a>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4106,13 +4106,24 @@ window.aktanSelectGroup=function(id){
  window.__aktanMGSelectedGroup=next;
  try{
    const hash=next?'#aktan-mode-'+encodeURIComponent(next):'';
-   if(location.hash!==hash) history.replaceState(null,'',location.pathname+location.search+hash);
+   if(location.hash!==hash) location.hash=hash;
  }catch(e){}
  const box=document.getElementById('pubContestsBox');
  if(!box)return false;
  renderPublicMG();
  return false;
 };
+
+function syncModeFromHash(){
+ const m=String(location.hash||'').match(/^#aktan-mode-(.+)$/);
+ const id=m?decodeURIComponent(m[1]):'';
+ if(id && ensureMG().some(x=>String(x.id)===id)) window.__aktanMGSelectedGroup=id;
+ else if(!id) window.__aktanMGSelectedGroup='';
+}
+window.addEventListener('hashchange',()=>{
+ syncModeFromHash();
+ if(document.getElementById('pubContestsBox')) renderPublicMG();
+});
 
 function publicOverlay(){
  const app=document.getElementById('publicApp');if(!app)return;
@@ -4141,34 +4152,6 @@ function enforceLocks(){
 function addLockCSS(){
  if(document.getElementById('aktanLockCSS'))return;const st=document.createElement('style');st.id='aktanLockCSS';st.textContent='.aktanLeaderboardLocked #pubRank .publicSelectBar,.aktanLeaderboardLocked #pubHome .publicSelectBar{display:none!important}.aktanMatchesLocked #pubMatchesPage .publicHero+*{}';document.head.appendChild(st);
 }
-/* AKTanModeGroupCaptureFix: handle mode taps at document level even if the room box is re-rendered. */
-(function(){
-  if(window.__aktanModeGroupCaptureFix)return;
-  window.__aktanModeGroupCaptureFix=true;
-  const findCard=e=>{
-    const t=e.target;
-    return t&&t.closest?t.closest('[data-aktan-mode-id]'):null;
-  };
-  const activate=e=>{
-    const card=findCard(e);
-    if(!card)return;
-    const host=document.getElementById('pubContestsBox');
-    if(!host || !host.contains(card))return;
-    const id=card.getAttribute('data-aktan-mode-id');
-    if(!id || typeof window.aktanSelectGroup!=='function')return;
-    if(e.type==='touchend')e.preventDefault();
-    e.stopPropagation();
-    window.aktanSelectGroup(id);
-  };
-  document.addEventListener('click',activate,true);
-  document.addEventListener('touchend',activate,{capture:true,passive:false});
-  document.addEventListener('pointerup',activate,true);
-  window.addEventListener('hashchange',()=>{
-    const m=String(location.hash||'').match(/^#aktan-mode-(.+)$/);
-    if(m&&typeof window.aktanSelectGroup==='function')window.aktanSelectGroup(decodeURIComponent(m[1]));
-  });
-})();
-
 function hooks(){
  ensureMG();addLockCSS();adminPanel();addRoomFields();wrapRoomFns();
  const btn=document.getElementById('aktanAddCustomGroup');if(btn)btn.onclick=addCustomGroup;
@@ -4177,7 +4160,7 @@ function hooks(){
    window.renderPublicApp=function(){oldRPA?.apply(this,arguments);ensureMG();addRoomFields();adminPanel();renderPublicMG();publicOverlay();enforceLocks();};
    const oldSec=window.publicSection;window.publicSection=function(id){oldSec?.apply(this,arguments);if(id==='pubContests')setTimeout(renderPublicMG,0);setTimeout(enforceLocks,0);};
  }
- renderAdminMG();renderPublicMG();publicOverlay();enforceLocks();
+ syncModeFromHash();renderAdminMG();renderPublicMG();publicOverlay();enforceLocks();
 }
 document.addEventListener('DOMContentLoaded',()=>setTimeout(hooks,50));
 setTimeout(hooks,700);
