@@ -3873,10 +3873,10 @@ window.previewOCRImages=function(e){
 .aktanSocialBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px auto 12px;max-width:1120px}
 .aktanSocialBar a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text);padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-weight:800;font-size:12px}
 .aktanGroupGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
-.aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color}
+.aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color};touch-action:manipulation
 .aktanGroupCard:hover{transform:translateY(-2px);border-color:rgba(255,176,0,.55)}
-.aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46}
-.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72))}
+.aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46};pointer-events:none
+.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72))};pointer-events:none
 .aktanGroupContent{position:relative;z-index:1;padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}
 .aktanGroupContent .title{font-size:21px;font-weight:950;letter-spacing:.3px}
 .aktanGroupContent .desc{color:#c9d2e2;font-size:12px;margin-top:4px}
@@ -4036,7 +4036,7 @@ function renderAdminStudioControls(){
 }
 function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
- const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" onclick="window.aktanSelectGroup('${escMG(g.id)}')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
+ const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" data-aktan-group-id="${escMG(g.id)}" onclick="window.aktanSelectGroup('${escMG(g.id)}')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4056,7 +4056,26 @@ function renderPublicMG(){
    box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3><div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanSelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
  }
 }
-window.aktanSelectGroup=function(id){window.__aktanMGSelectedGroup=id||'';renderPublicMG();document.getElementById('pubContests')?.scrollIntoView({behavior:'smooth',block:'start'});};
+window.aktanSelectGroup=function(id){
+ window.__aktanMGSelectedGroup=String(id||'');
+ renderPublicMG();
+ const sec=document.getElementById('pubContests');
+ if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+};
+function bindPublicModeClicks(){
+ if(window.__aktanPublicModeClicksBound)return;
+ window.__aktanPublicModeClicksBound=true;
+ document.addEventListener('click',function(ev){
+   const el=ev.target&&ev.target.closest?ev.target.closest('.aktanGroupCard'):null;
+   if(!el)return;
+   const id=el.getAttribute('data-aktan-group-id');
+   if(id){
+     ev.preventDefault();
+     ev.stopPropagation();
+     window.aktanSelectGroup(id);
+   }
+ },true);
+}
 function publicOverlay(){
  const app=document.getElementById('publicApp');if(!app)return;
  let top=app.querySelector('#aktanPublicExtras');if(!top){top=document.createElement('div');top.id='aktanPublicExtras';const anchor=app.querySelector('.publicTop');anchor?.insertAdjacentElement('afterend',top);}
@@ -4085,7 +4104,7 @@ function addLockCSS(){
  if(document.getElementById('aktanLockCSS'))return;const st=document.createElement('style');st.id='aktanLockCSS';st.textContent='.aktanLeaderboardLocked #pubRank .publicSelectBar,.aktanLeaderboardLocked #pubHome .publicSelectBar{display:none!important}.aktanMatchesLocked #pubMatchesPage .publicHero+*{}';document.head.appendChild(st);
 }
 function hooks(){
- ensureMG();addLockCSS();adminPanel();addRoomFields();wrapRoomFns();
+ ensureMG();addLockCSS();bindPublicModeClicks();adminPanel();addRoomFields();wrapRoomFns();
  const btn=document.getElementById('aktanAddCustomGroup');if(btn)btn.onclick=addCustomGroup;
  const oldRPA=window.renderPublicApp;if(!window.__aktanMGRenderWrapped){
    window.__aktanMGRenderWrapped=true;
