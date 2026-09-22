@@ -4039,7 +4039,9 @@ function renderAdminStudioControls(){
 }
 function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
- const rs=groupRooms(g.id);return `<button type="button" class="aktanGroupCard" data-aktan-mode-id="${escMG(g.id)}" aria-label="Open ${escMG(g.name)} rooms">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
+ const rs=groupRooms(g.id);
+ const gid=escMG(g.id);
+ return `<button type="button" class="aktanGroupCard" data-aktan-mode-id="${gid}" aria-label="Open ${escMG(g.name)} rooms" onclick="window.aktanSelectGroup('${gid}');return false;" ontouchend="window.aktanSelectGroup('${gid}');return false;">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></button>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4061,35 +4063,38 @@ function renderPublicMG(){
  }
 }
 window.aktanSelectGroup=function(id){
- const next=String(id||'');
- if(!next){window.__aktanMGSelectedGroup='';renderPublicMG();return;}
- const exists=groupById(next);
- if(!exists)return;
+ const next=String(id||'').trim();
+ if(next && !ensureMG().some(x=>String(x.id)===next))return false;
  window.__aktanMGSelectedGroup=next;
- renderPublicMG();
- const section=document.getElementById('pubContests');
- if(section) section.scrollIntoView({behavior:'smooth',block:'start'});
+ const box=document.getElementById('pubContestsBox');
+ if(!box)return false;
+ // Render directly so this action never depends on another navigation handler.
+ if(next){
+   const g=groupById(next),rs=groupRooms(next);
+   box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3><div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanSelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
+ }else{
+   box.innerHTML=`<div class="aktanGroupGrid">${ensureMG().map(groupCardHTML).join('')}</div><div class="notice">💡 Select a game mode above to see only its rooms and matches.</div>`;
+ }
+ bindPublicModeClicks();
+ try{document.getElementById('pubContests')?.scrollIntoView({block:'start'});}catch(e){}
+ return false;
 };
 function bindPublicModeClicks(){
  const box=document.getElementById('pubContestsBox');
- if(!box||box.dataset.aktanModeClickBound==='1')return;
+ if(!box)return;
+ if(box.dataset.aktanModeClickBound==='1')return;
  box.dataset.aktanModeClickBound='1';
- box.addEventListener('click',function(ev){
-   const card=ev.target.closest?.('[data-aktan-mode-id]');
+ const activate=function(ev){
+   const t=ev.target;
+   const card=t&&t.closest?t.closest('[data-aktan-mode-id]'):null;
    if(!card||!box.contains(card))return;
-   ev.preventDefault();
-   ev.stopPropagation();
-   window.aktanSelectGroup(card.getAttribute('data-aktan-mode-id')||'');
- },true);
- box.addEventListener('pointerup',function(ev){
-   const card=ev.target.closest?.('[data-aktan-mode-id]');
-   if(!card||!box.contains(card))return;
-   if(ev.pointerType==='touch'){
-     ev.preventDefault();
-     ev.stopPropagation();
-     window.aktanSelectGroup(card.getAttribute('data-aktan-mode-id')||'');
-   }
- },true);
+   const id=card.getAttribute('data-aktan-mode-id')||'';
+   if(!id)return;
+   window.aktanSelectGroup(id);
+ };
+ box.addEventListener('click',activate,false);
+ box.addEventListener('touchend',activate,{passive:true});
+ box.addEventListener('pointerup',activate,false);
 }
 function publicOverlay(){
  const app=document.getElementById('publicApp');if(!app)return;
