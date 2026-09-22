@@ -1214,6 +1214,15 @@ window.quickReadScreenshot=async function(q){
   color:var(--master-accent,#ffb000) !important;
 }
 </style>
+
+<style id="AKTanV28DirectRoomsCSS">
+.aktanDirectRoomsTitle{margin:0 0 14px;padding:16px 18px;border:1px solid rgba(0,229,255,.24);border-radius:16px;background:rgba(8,15,24,.86)}
+.aktanDirectRoomsTitle h2{margin:0 0 4px;font-size:22px}
+.aktanDirectRoomSection{margin:0 0 18px}
+.aktanDirectRoomHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;padding:13px 16px;border:1px solid rgba(0,229,255,.20);border-radius:14px;background:rgba(8,15,24,.72)}
+.aktanDirectRoomHeader h3{margin:0;font-size:18px}
+.aktanDirectRoomSection .aktanRoomGrid{margin-top:0}
+</style>
 </head>
 <body>
 <header><h1>AKTan Tournament pointcalc</h1><div class="sub">Professional Free Fire Tournament Manager</div></header>
@@ -4053,15 +4062,25 @@ function roomCardHTML(r){
  <div class="small muted">${escMG(r.rules||'')}</div><button class="primary" style="margin-top:10px;width:100%" onclick="registerForPublicRoom('${escMG(r.id)}')" ${full?'disabled':''}>📝 ${full?'Room Full':'Register in this Room'}</button></div></div>`;
 }
 function renderPublicMG(){
- ensureMG();const box=document.getElementById('pubContestsBox');if(!box)return;
- bindPublicModeClicks();
- const selected=window.__aktanMGSelectedGroup||'';
- if(!selected){
-   box.innerHTML=`<div class="aktanGroupGrid">${ensureMG().map(groupCardHTML).join('')}</div><div class="notice">💡 Select a game mode above to see only its rooms and matches.</div>`;
- }else{
-   const g=groupById(selected),rs=groupRooms(selected);
-   box.innerHTML=`<div class="aktanRoomGroupHeader"><div><h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3><div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div></div><button type="button" onclick="window.aktanSelectGroup('')">← All Game Modes</button></div>${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:'<div class="empty">No matches in this game mode yet.</div>'}`;
- }
+ ensureMG();
+ const box=document.getElementById('pubContestsBox');
+ if(!box)return;
+ /* V28: Direct room listing. Mode cards are intentionally removed so the public page
+    never depends on mode selection/click handlers to reveal rooms. */
+ const groups=ensureMG();
+ const sections=groups.map(g=>{
+   const rs=groupRooms(g.id);
+   return `<section class="aktanDirectRoomSection" data-mode-group="${escMG(g.id)}">
+     <div class="aktanDirectRoomHeader">
+       <div>
+         <h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3>
+         <div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div>
+       </div>
+     </div>
+     ${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:`<div class="empty">No matches in this game mode yet.</div>`}
+   </section>`;
+ }).join('');
+ box.innerHTML=`<div class="aktanDirectRoomsTitle"><h2>🎮 Available Rooms</h2><div class="small muted">Choose a room below to view details and register.</div></div>${sections}`;
 }
 window.aktanSelectGroup=function(id){
  const next=String(id||'').trim();
