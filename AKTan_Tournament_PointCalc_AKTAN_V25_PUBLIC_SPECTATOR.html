@@ -1214,15 +1214,6 @@ window.quickReadScreenshot=async function(q){
   color:var(--master-accent,#ffb000) !important;
 }
 </style>
-
-<style id="AKTanV28DirectRoomsCSS">
-.aktanDirectRoomsTitle{margin:0 0 14px;padding:16px 18px;border:1px solid rgba(0,229,255,.24);border-radius:16px;background:rgba(8,15,24,.86)}
-.aktanDirectRoomsTitle h2{margin:0 0 4px;font-size:22px}
-.aktanDirectRoomSection{margin:0 0 18px}
-.aktanDirectRoomHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px;padding:13px 16px;border:1px solid rgba(0,229,255,.20);border-radius:14px;background:rgba(8,15,24,.72)}
-.aktanDirectRoomHeader h3{margin:0;font-size:18px}
-.aktanDirectRoomSection .aktanRoomGrid{margin-top:0}
-</style>
 </head>
 <body>
 <header><h1>AKTan Tournament pointcalc</h1><div class="sub">Professional Free Fire Tournament Manager</div></header>
@@ -1248,7 +1239,23 @@ window.quickReadScreenshot=async function(q){
 <section id="teams" class="page">
 <div class="card"><h2>Team Setup</h2><div class="notice">Add 4 main players and 1 optional player for each team. Team logos are supported.</div><button class="primary" id="addTeam">Add Team</button></div>
 <div class="card" id="publicControlCard"><h2>🌐 Public Spectator & Registration</h2><div class="notice">Create a private share link. Anyone with the link can view the leaderboard, slots, teams and tournament info, and can submit a registration. Registrations stay pending until you approve them.</div><div class="grid g2"><div><label>Public Link</label><input id="publicLinkBox" readonly placeholder="Create a public link first"></div><div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><button class="primary" type="button" onclick="createPublicShare()">🔗 Create Link</button><button type="button" onclick="publishPublicShare()">☁️ Publish / Sync</button><button type="button" onclick="copyPublicShare()">📋 Copy Link</button></div></div><div id="publicShareStatus" class="small muted" style="margin-top:10px">Public sharing is not connected.</div><div class="notice" style="margin-top:12px"><b>🏆 Public Leaderboard Control</b><div class="grid g2" style="margin-top:10px"><label>Leaderboard Type<select id="adminPublicBoardMode" onchange="savePublicBoardControl()"><option value="overall">Overall Leaderboard</option><option value="match">Match-wise Leaderboard</option><option value="killers">Kill Leaderboard</option></select></label><label>Default Room<select id="adminPublicBoardRoom" onchange="savePublicBoardControl()"><option value="">All Rooms / Overall</option></select></label></div><div id="adminPublicBoardStatus" class="small muted" style="margin-top:8px">Public leaderboard settings are not set.</div></div><div class="notice" style="margin-top:12px"><b>📝 Public Registration Format</b><div class="grid g2" style="margin-top:10px"><div><label>Registration Mode</label><select id="publicAdminRegMode" onchange="publicAdminRegistrationChanged()"><option value="solo">SOLO</option><option value="duo">DUO</option><option value="squad" selected>SQUAD</option></select></div><div><label>Public Registration Fields</label><div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px"><label style="display:flex;align-items:center;gap:6px"><input id="publicFieldLogo" type="checkbox" checked onchange="publicAdminRegistrationChanged()"> Logo</label><label style="display:flex;align-items:center;gap:6px"><input id="publicFieldTeam" type="checkbox" checked onchange="publicAdminRegistrationChanged()"> Team Name</label><label style="display:flex;align-items:center;gap:6px"><input id="publicFieldPlayers" type="checkbox" checked onchange="publicAdminRegistrationChanged()"> Player Names</label><label style="display:flex;align-items:center;gap:6px"><input id="publicFieldPhone" type="checkbox" checked onchange="publicAdminRegistrationChanged()"> Phone Number</label></div></div></div><div id="publicAdminFormatPreview" class="small muted" style="margin-top:8px"></div><button type="button" onclick="savePublicRegistrationSettings()" style="margin-top:10px">💾 Save Registration Format</button></div><div id="publicPendingBox" style="margin-top:12px"></div></div>
-<div class="card" id="publicRoomsCard"><h2>🎮 Public Rooms / Contests</h2><div class="notice">Create unlimited public rooms: LW Headshot, CS Headshot 1v1/2v2, CS Body 1v1/2v2/3v3/4v4, BR, or any custom match. Each room has its own slots, entry fee display, prize, map, time, status and rules.</div><div class="grid g3" style="margin-top:10px"><div><label>Contest / Room Name *</label><input id="roomTitle" placeholder="e.g. LW HEADSHOT 1V1"></div><div><label>Attractive Thumbnail</label><input id="roomThumbnail" type="file" accept="image/*"><div id="roomThumbPreview" class="roomThumbPreview"><img id="roomThumbPreviewImg" alt="Thumbnail preview"></div></div><div><label>Category</label><select id="roomCategory"><option>LW Headshot</option><option>CS Headshot</option><option>CS Body</option><option>Clash Squad</option><option>BR</option><option>Custom</option></select></div><div><label>Format</label><select id="roomFormat"><option>Solo</option><option>1v1</option><option>2v2</option><option>3v3</option><option>4v4</option><option>Duo</option><option>Squad</option></select></div><div><label>Map</label><input id="roomMap" placeholder="Bermuda / Custom"></div><div><label>Maximum Slots</label><input id="roomSlots" type="number" min="1" max="1000" value="2"></div><div><label>Entry Fee ₹ (display only)</label><input id="roomFee" type="number" min="0" value="0"></div><div><label>Prize Pool ₹</label><input id="roomPrize" type="number" min="0" value="0"></div><div><label>Match Start Time</label><input id="roomStart" type="datetime-local"></div><div><label>Status</label><select id="roomStatus"><option>Upcoming</option><option>Live</option><option>Completed</option><option>Cancelled</option></select></div></div><div style="margin-top:10px"><label>Payment / Slot Policy</label><textarea id="roomPaymentNote" rows="3" placeholder="Entry fee is taken only after all slots are full. Payment is handled personally by the organizer."></textarea></div><div style="margin-top:10px"><label>Room Rules</label><textarea id="roomRules" rows="3" placeholder="Write rules for this room..."></textarea></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" type="button" onclick="savePublicRoom()">➕ Add Room</button><button type="button" onclick="clearPublicRoomForm()">Clear</button></div><div id="publicRoomsList" style="margin-top:14px"></div></div><div class="card" id="changePinCard"><h2>🔐 Change Admin PIN</h2><div class="notice">Change the PIN used to unlock Admin Mode. Keep the new PIN private.</div><div class="grid g3" style="margin-top:10px"><input id="oldAdminPin" type="password" minlength="4" maxlength="30" placeholder="Current PIN"><input id="newAdminPin" type="password" minlength="4" maxlength="30" placeholder="New PIN (4–30 chars)"><input id="confirmAdminPin" type="password" minlength="4" maxlength="30" placeholder="Confirm new PIN"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" type="button" onclick="changeAdminPin()">🔄 Change PIN</button><button type="button" onclick="recoverAdminPin()">🆘 Forgot PIN / Recover</button></div><div id="changePinStatus" class="small muted" style="margin-top:8px"></div></div><div id="teamsList"></div>
+<div class="card" id="publicPromoCard">
+<h2>📢 Public Notification & Social Links</h2>
+<div class="notice">Set a notification and your social links here. These are shown on the public page so players can see important updates and follow/contact you.</div>
+<div class="grid g2" style="margin-top:10px">
+  <label style="display:flex;align-items:center;gap:8px"><input id="publicNoticeEnabled" type="checkbox" checked> Show notification on public page</label>
+  <label>Notification Title<input id="publicNoticeTitle" maxlength="80" placeholder="e.g. 🔥 Room registrations are open!"></label>
+  <label style="grid-column:1/-1">Notification Message<textarea id="publicNoticeMessage" rows="2" maxlength="300" placeholder="Write any announcement players should see..."></textarea></label>
+  <label>YouTube Link<input id="publicYoutubeLink" type="url" placeholder="https://youtube.com/..."></label>
+  <label>WhatsApp Link<input id="publicWhatsappLink" type="url" placeholder="https://wa.me/..."></label>
+  <label>Instagram Link<input id="publicInstagramLink" type="url" placeholder="https://instagram.com/..."></label>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+  <button class="primary" type="button" onclick="savePublicPromoSettings()">💾 Save Notification & Links</button>
+</div>
+<div id="publicPromoStatus" class="small muted" style="margin-top:8px"></div>
+</div>
+<div class="card" id="publicRoomsCard"><h2>🎮 Public Rooms / Contests</h2><div class="notice">Create unlimited public rooms: LW Headshot, CS Headshot 1v1/2v2, CS Body 1v1/2v2/3v3/4v4, BR, or any custom match. Each room has its own slots, entry fee display, prize, map, time, status and rules.</div><div class="grid g3" style="margin-top:10px"><div><label>Contest / Room Name *</label><input id="roomTitle" placeholder="e.g. LW HEADSHOT 1V1"></div><div><label>Attractive Thumbnail</label><input id="roomThumbnail" type="file" accept="image/*"><div id="roomThumbPreview" class="roomThumbPreview"><img id="roomThumbPreviewImg" alt="Thumbnail preview"></div></div><div><label>Category</label><select id="roomCategory"><option>LW Headshot</option><option>CS Headshot</option><option>CS Body</option><option>Clash Squad</option><option>BR</option><option>Custom</option></select></div><div><label>Room Number</label><input id="roomNumber" type="number" min="1" max="9999" placeholder="Auto"></div><div><label>Number of Matches</label><input id="roomMatchCount" type="number" min="1" max="99" value="1"></div><div><label>Format</label><select id="roomFormat"><option>Solo</option><option>1v1</option><option>2v2</option><option>3v3</option><option>4v4</option><option>Duo</option><option>Squad</option></select></div><div><label>Map</label><input id="roomMap" placeholder="Bermuda / Custom"></div><div><label>Maximum Slots</label><input id="roomSlots" type="number" min="1" max="1000" value="2"></div><div><label>Entry Fee ₹ (display only)</label><input id="roomFee" type="number" min="0" value="0"></div><div><label>Prize Pool ₹</label><input id="roomPrize" type="number" min="0" value="0"></div><div><label>Match Start Time</label><input id="roomStart" type="datetime-local"></div><div><label>Status</label><select id="roomStatus"><option>Upcoming</option><option>Live</option><option>Completed</option><option>Cancelled</option></select></div></div><div style="margin-top:10px"><label>Payment / Slot Policy</label><textarea id="roomPaymentNote" rows="3" placeholder="Entry fee is taken only after all slots are full. Payment is handled personally by the organizer."></textarea></div><div style="margin-top:10px"><label>Room Rules</label><textarea id="roomRules" rows="3" placeholder="Write rules for this room..."></textarea></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" type="button" onclick="savePublicRoom()">➕ Add Room</button><button type="button" onclick="clearPublicRoomForm()">Clear</button></div><div id="publicRoomsList" style="margin-top:14px"></div></div><div class="card" id="changePinCard"><h2>🔐 Change Admin PIN</h2><div class="notice">Change the PIN used to unlock Admin Mode. Keep the new PIN private.</div><div class="grid g3" style="margin-top:10px"><input id="oldAdminPin" type="password" minlength="4" maxlength="30" placeholder="Current PIN"><input id="newAdminPin" type="password" minlength="4" maxlength="30" placeholder="New PIN (4–30 chars)"><input id="confirmAdminPin" type="password" minlength="4" maxlength="30" placeholder="Confirm new PIN"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" type="button" onclick="changeAdminPin()">🔄 Change PIN</button><button type="button" onclick="recoverAdminPin()">🆘 Forgot PIN / Recover</button></div><div id="changePinStatus" class="small muted" style="margin-top:8px"></div></div><div id="teamsList"></div>
 </section>
 
 <section id="match" class="page">
@@ -1430,12 +1437,6 @@ function printPrizePool(){
 </style>
 </head><body onload="setTimeout(function(){window.print()},250)"><div class=sheet><div class=head><img src="${logo}"><h1>${esc(S.name||'AKTan Squad War')}</h1><p>OFFICIAL PRIZE POOL</p><p>${S.date?esc(new Date(S.date).toLocaleDateString()):''}</p></div><div class=total><small>TOTAL PRIZE POOL</small>₹${total}</div><table><thead><tr><th>Type</th><th>Reward</th><th>Recipient</th><th>Prize</th></tr></thead><tbody>${rows}</tbody></table><div class=foot>AKTan Tournament • Official Prize Pool</div><div class=noPrint><button onclick="window.print()">🖨️ Print / Save PDF</button></div></div>
 
-<script>
-(function(){
-  const oldSave=window.save;
-  if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
-})();
-<\/script>
 </body></html>`);
   w.document.close();
 }
@@ -1466,6 +1467,7 @@ function renderPublicApp(){
  let pp=document.getElementById('pubPrizeBox');if(pp)pp.innerHTML=prizePublicHTML();let ps=document.getElementById('pubPlayersBox');if(ps)ps.innerHTML=playerStats().filter(x=>teams.some(t=>t.name===x.team)).map((x,i)=>`<div class="publicCard" style="margin-bottom:8px"><b>#${i+1} ${esc(x.player)}</b><span class="right pts">${x.kills} kills</span><div class="muted small">${esc(x.team)}</div></div>`).join('')||'<div class="empty">No player stats yet.</div>';
  let sl=document.getElementById('pubSlotsBox');if(sl){const r=room(selected),max=r?Math.max(1,+r.maxSlots||1):Math.max(12,teams.length);sl.innerHTML=Array.from({length:max},(_,i)=>{let t=teams[i];return `<div class="publicReward"><span>${t?'🟢':'⚪'} Slot ${i+1} — ${t?esc(t.name):'Available'}</span></div>`}).join('');}
  let rules=document.querySelectorAll('#rulebook .ruleSection .editable'),pr=document.getElementById('pubRulesBox');if(pr)pr.innerHTML=[...rules].map((r,i)=>`<div style="margin-bottom:14px"><b>Section ${i+1}</b><div class="notice" style="white-space:pre-wrap">${esc(r.value||r.textContent||'')}</div></div>`).join('')||'<div class="muted">Rules not configured.</div>';
+ renderPublicRooms(); if(typeof renderPublicPromo==='function')renderPublicPromo();
 }
 function setPublicRoom(v){S.publicSelectedRoom=v||'';S.publicLeaderboardContestId=S.publicSelectedRoom;window.__aktanPublicRoomId=S.publicSelectedRoom||'all';save();renderPublicApp();if(typeof window.renderPremiumPublicV27==='function')window.renderPremiumPublicV27();}
 function setPublicBoard(v){S.publicLeaderboardMode=v||'overall';save();renderPublicApp();}
@@ -1910,7 +1912,7 @@ function addV9Penalty(){if(!v9Guard())return;let id=document.getElementById('v9P
 function removeV9Adjustment(id){if(!v9Guard())return;let p=(S.penalties||[]).find(x=>x.id===id);if(!p)return;if(confirm('Remove this points adjustment?')){S.penalties=S.penalties.filter(x=>x.id!==id);syncSetupFromInputs();renderAll();toast('Penalty/bonus removed')}}
 function renderV9Penalties(){let s=document.getElementById('v9PenaltyTeam');if(s)s.innerHTML=S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');let b=document.getElementById('v9Penalties');if(b)b.innerHTML=(S.penalties||[]).map(p=>{let t=S.teams.find(x=>x.id===p.teamId);return `<div class="notice"><b>${esc(t?.name||'Unknown')}</b> <span class="right">${p.points>0?'+':''}${p.points} pts <button class="danger" onclick="removeV9Adjustment('${p.id}')">✕ Remove</button></span><br><span class="muted">${esc(p.reason)}</span></div>`}).join('')||'<div class="empty">No penalties or bonuses yet.</div>'}
 function renderV9History(){let box=document.getElementById('v9HistoryList');if(!box)return;box.innerHTML=(S.history||[]).map((h,i)=>`<div class="card historyCard"><h3>${esc(h.name)}</h3><div class="muted">Champion: <b>${esc(h.champion)}</b> • Date: ${new Date(h.date).toLocaleDateString()}</div><div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Rank</th><th>Team</th><th>Points</th><th>Kills</th></tr></thead><tbody>${h.leaderboard.map(x=>`<tr><td>#${x.rank}</td><td>${esc(x.team)}</td><td class="pts">${x.points}</td><td>${x.kills}</td></tr>`).join('')}</tbody></table></div></div>`).join('')||'<div class="card empty">No archived tournaments yet.</div>'}
-const renderAllV9Base=renderAll;renderAll=function(){v9Ensure();renderAllV9Base();renderV9Dashboard();renderV9History();renderV9Penalties();renderPrizePool();renderCertificateOptions();renderPublicApp();renderAdminPublicBoardControl();filterTeams();const remoteAdminEditing=window.__aktanRemoteAdminSession===true;document.querySelectorAll('input,select,textarea').forEach(e=>{if(S.publicMode&&!remoteAdminEditing&&!['teamSearch','playerSearch','certTitle','v9Caption','pubRegTeam','pubRegCaptain','pubRegP1','pubRegP2','pubRegP3','pubRegP4','pubRegP5','pubRegPhone','pubRegLogo','publicAdminRegMode','publicFieldLogo','publicFieldTeam','publicFieldPlayers','publicFieldPhone'].includes(e.id))e.disabled=true;else if(remoteAdminEditing&&e.closest('#publicRoomsCard,#publicControlCard,#changePinCard'))e.disabled=false});document.querySelectorAll('#publicRoomsCard button,#publicControlCard button,#changePinCard button').forEach(b=>{if(remoteAdminEditing)b.disabled=false});document.getElementById('saveBtn').disabled=S.publicMode&&!remoteAdminEditing;document.getElementById('resetBtn').disabled=S.publicMode&&!remoteAdminEditing;if(document.getElementById('v9Caption')&&!document.getElementById('v9Caption').value)generateV9Caption()};
+const renderAllV9Base=renderAll;renderAll=function(){v9Ensure();renderAllV9Base();renderV9Dashboard();renderV9History();renderV9Penalties();renderPrizePool();renderCertificateOptions();renderPublicApp();renderAdminPublicBoardControl();filterTeams();const remoteAdminEditing=window.__aktanRemoteAdminSession===true;document.querySelectorAll('input,select,textarea').forEach(e=>{if(S.publicMode&&!remoteAdminEditing&&!['teamSearch','playerSearch','certTitle','v9Caption','pubRegTeam','pubRegCaptain','pubRegP1','pubRegP2','pubRegP3','pubRegP4','pubRegP5','pubRegPhone','pubRegLogo','publicAdminRegMode','publicFieldLogo','publicFieldTeam','publicFieldPlayers','publicFieldPhone'].includes(e.id))e.disabled=true;else if(remoteAdminEditing&&e.closest('#publicRoomsCard,#publicControlCard,#publicPromoCard,#changePinCard'))e.disabled=false});document.querySelectorAll('#publicRoomsCard button,#publicControlCard button,#publicPromoCard button,#changePinCard button').forEach(b=>{if(remoteAdminEditing)b.disabled=false});document.getElementById('saveBtn').disabled=S.publicMode&&!remoteAdminEditing;document.getElementById('resetBtn').disabled=S.publicMode&&!remoteAdminEditing;if(document.getElementById('v9Caption')&&!document.getElementById('v9Caption').value)generateV9Caption()};
 document.getElementById('adminModeBtn').onclick=v9Admin;
 let OCR_IMAGE_DATA='';
 let OCR_IMAGE_DATAS=[];
@@ -2679,7 +2681,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
   window.loadPendingPublicRegistrations=loadPendingPublicRegistrations;
   window.approvePublicRegistration=async function(id){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'X-Admin-Key':publicAdminKey}});const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Solo Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();await publishPublicShare();}await loadPendingPublicRegistrations();}catch(e){alert('Approval failed: '+e.message)}};
   async function bootRemotePublic(){const token=new URLSearchParams(location.search).get('publicToken');if(!token)return;try{document.body.classList.add('publicModeBody');const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/state');if(!d.state)throw new Error('Public tournament not found');S=Object.assign(S,d.state,{publicMode:true});if(typeof applySpectatorTheme==='function')applySpectatorTheme();ensurePrize();renderAll();document.getElementById('publicApp').style.display='block';if(typeof applySpectatorTheme==='function')applySpectatorTheme();renderPublicApp();publicRegModeChanged();publicSection('pubHome');}catch(e){const app=document.getElementById('publicApp');if(app){app.style.display='block';app.innerHTML='<div class="publicHero"><h1>Public link unavailable</h1><div>'+esc(e.message)+'</div></div>'}}}
-  window.publicAdminLogin=async function(){const token=new URLSearchParams(location.search).get('publicToken');if(!token){alert('Open the public tournament link first.');return}const old=document.getElementById('aktanAdminLoginBox');if(old)old.remove();const box=document.createElement('div');box.id='aktanAdminLoginBox';box.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:20px';box.innerHTML='<div style="width:min(420px,100%);background:#111827;border:1px solid #6b7280;border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#fff"><h2 style="margin:0 0 8px">🔐 Admin Login</h2><div style="font-size:13px;opacity:.8;margin-bottom:14px">Enter your Admin PIN / Password to unlock the main app.</div><input id="aktanAdminLoginPass" type="password" autocomplete="current-password" placeholder="Admin PIN / Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #4b5563;background:#0b1220;color:#fff"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="aktanAdminLoginBtn" class="primary" type="button">🔓 Login</button><button id="aktanAdminCancelBtn" type="button">Cancel</button></div><div id="aktanAdminLoginMsg" style="margin-top:10px;font-size:13px;min-height:18px"></div></div>';document.body.appendChild(box);const inp=document.getElementById('aktanAdminLoginPass'),msg=document.getElementById('aktanAdminLoginMsg');const close=()=>box.remove();document.getElementById('aktanAdminCancelBtn').onclick=close;document.getElementById('aktanAdminLoginBtn').onclick=async()=>{const password=inp.value;if(!password){msg.textContent='Please enter the Admin Password / PIN.';return}const btn=document.getElementById('aktanAdminLoginBtn');btn.disabled=true;msg.textContent='Checking…';try{const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/admin-login',{method:'POST',body:JSON.stringify({password})});publicToken=token;publicAdminKey=d.adminKey;remoteAdminSession=false;remoteAdminPending=true;remoteAdminPassword=password;window.__aktanRemoteAdminCheck=(candidate)=>remoteAdminPending&&candidate===remoteAdminPassword;window.__aktanRemoteAdminUnlock=()=>{remoteAdminPending=false;remoteAdminSession=true;window.__aktanRemoteAdminSession=true;S.publicMode=false;S.adminPin=remoteAdminPassword;remoteAdminPassword='';document.body.classList.remove('publicModeBody');const pubCard=document.getElementById('publicRoomsCard');if(pubCard)pubCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const ctl=document.getElementById('publicControlCard');if(ctl)ctl.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const pinCard=document.getElementById('changePinCard');if(pinCard)pinCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);};localStorage.setItem(PUB_TOKEN_KEY,publicToken);localStorage.setItem(PUB_ADMIN_KEY,publicAdminKey);S=Object.assign(S,d.state,{publicMode:true});document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';close();renderAll();syncPublicAdminRegistrationUI();toast('🔐 Password verified. Now open Admin Mode and enter the same password again.');}catch(e){msg.textContent='❌ '+e.message;if(/incorrect|invalid admin password/i.test(e.message)){msg.textContent+='  Check your Admin PIN and try again.';}btn.disabled=false;}};inp.focus();inp.onkeydown=e=>{if(e.key==='Enter')document.getElementById('aktanAdminLoginBtn').click();}};
+  window.publicAdminLogin=async function(){const token=new URLSearchParams(location.search).get('publicToken');if(!token){alert('Open the public tournament link first.');return}const old=document.getElementById('aktanAdminLoginBox');if(old)old.remove();const box=document.createElement('div');box.id='aktanAdminLoginBox';box.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:20px';box.innerHTML='<div style="width:min(420px,100%);background:#111827;border:1px solid #6b7280;border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#fff"><h2 style="margin:0 0 8px">🔐 Admin Login</h2><div style="font-size:13px;opacity:.8;margin-bottom:14px">Enter your Admin PIN / Password to unlock the main app.</div><input id="aktanAdminLoginPass" type="password" autocomplete="current-password" placeholder="Admin PIN / Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #4b5563;background:#0b1220;color:#fff"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="aktanAdminLoginBtn" class="primary" type="button">🔓 Login</button><button id="aktanAdminCancelBtn" type="button">Cancel</button></div><div id="aktanAdminLoginMsg" style="margin-top:10px;font-size:13px;min-height:18px"></div></div>';document.body.appendChild(box);const inp=document.getElementById('aktanAdminLoginPass'),msg=document.getElementById('aktanAdminLoginMsg');const close=()=>box.remove();document.getElementById('aktanAdminCancelBtn').onclick=close;document.getElementById('aktanAdminLoginBtn').onclick=async()=>{const password=inp.value;if(!password){msg.textContent='Please enter the Admin Password / PIN.';return}const btn=document.getElementById('aktanAdminLoginBtn');btn.disabled=true;msg.textContent='Checking…';try{const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/admin-login',{method:'POST',body:JSON.stringify({password})});publicToken=token;publicAdminKey=d.adminKey;remoteAdminSession=false;remoteAdminPending=true;remoteAdminPassword=password;window.__aktanRemoteAdminCheck=(candidate)=>remoteAdminPending&&candidate===remoteAdminPassword;window.__aktanRemoteAdminUnlock=()=>{remoteAdminPending=false;remoteAdminSession=true;window.__aktanRemoteAdminSession=true;S.publicMode=false;S.adminPin=remoteAdminPassword;remoteAdminPassword='';document.body.classList.remove('publicModeBody');const pubCard=document.getElementById('publicRoomsCard');if(pubCard)pubCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const ctl=document.getElementById('publicControlCard');if(ctl)ctl.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const promoCard=document.getElementById('publicPromoCard');if(promoCard)promoCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const pinCard=document.getElementById('changePinCard');if(pinCard)pinCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);};localStorage.setItem(PUB_TOKEN_KEY,publicToken);localStorage.setItem(PUB_ADMIN_KEY,publicAdminKey);S=Object.assign(S,d.state,{publicMode:true});document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';close();renderAll();syncPublicAdminRegistrationUI();toast('🔐 Password verified. Now open Admin Mode and enter the same password again.');}catch(e){msg.textContent='❌ '+e.message;if(/incorrect|invalid admin password/i.test(e.message)){msg.textContent+='  Check your Admin PIN and try again.';}btn.disabled=false;}};inp.focus();inp.onkeydown=e=>{if(e.key==='Enter')document.getElementById('aktanAdminLoginBtn').click();}};
 
   window.recoverAdminPin=async function(){
     if(S.publicMode){alert('Unlock Admin Mode first.');return}
@@ -2718,7 +2720,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
 })();
 </script>
 <div id="publicApp" class="publicApp" style="display:none">
-<div class="publicTop"><div class="publicBrand"><img id="publicLogo" src=""><div><div id="publicTitle" class="publicTitle">AKTan Squad War</div><div class="muted small">PUBLIC TOURNAMENT APP</div></div><button class="right" onclick="publicAdminLogin()">🔐 Admin Login</button></div></div>
+<div class="publicTop"><div class="publicBrand"><img id="publicLogo" src=""><div><div id="publicTitle" class="publicTitle">AKTan Squad War</div><div class="muted small">PUBLIC TOURNAMENT APP</div></div><button class="right" onclick="publicAdminLogin()">🔐 Admin Login</button></div></div><div id="publicNoticeBanner" style="display:none"><div data-promo-title>📢 Notification</div><div data-promo-message></div></div><div id="publicSocialLinks"></div>
 <section id="pubHome" class="publicSection active"><div class="publicSelectBar"><div class="publicSelectGrid"><label>🎮 Select Room<select id="pubPublicRoomSelect" onchange="setPublicRoom(this.value)"><option value="">All Rooms</option></select></label><label>🏆 Leaderboard<select id="pubPublicBoardSelect" onchange="setPublicBoard(this.value)"><option value="overall">Overall Leaderboard</option><option value="match">Match-wise Leaderboard</option><option value="killers">Kill Leaderboard</option></select></label></div><div id="pubSelectedRoomInfo" class="small muted" style="margin-top:8px"></div></div><div class="publicHero"><div class="eyebrow">AKTAN SQUAD WAR</div><h1 id="pubHomeName">AKTan Squad War</h1><div id="pubHomeDate" class="muted">Tournament information</div><div class="publicMoney" id="pubHomePrize">₹0</div><div class="muted">PRIZE POOL</div></div><div class="publicGrid"><div class="publicCard"><div class="muted">Teams Registered</div><h2 id="pubTeams">0</h2></div><div class="publicCard"><div class="muted">Matches</div><h2 id="pubMatches">0</h2></div><div class="publicCard"><div class="muted">Status</div><h2 id="pubStatus">UPCOMING</h2></div><div class="publicCard"><div class="muted">Current #1</div><h2 id="pubLeader">—</h2></div></div></section>
 <section id="pubContests" class="publicSection"><div class="publicHero"><div class="eyebrow">AKTAN PUBLIC CONTESTS</div><h2>🎮 Choose Your Room</h2><div class="muted">Choose a contest, check the slots and rules, then register. Entry fee is shown for information; payment is handled personally by the organizer.</div></div><div id="pubContestsBox" class="publicTable"></div></section><section id="pubRank" class="publicSection"><div class="publicHero"><h2>🏆 Leaderboard</h2></div><div id="pubRankBox" class="publicTable"></div></section>
 <section id="pubTeamsPage" class="publicSection"><div class="publicHero"><h2>👥 Teams</h2></div><div id="pubTeamsBox" class="publicGrid"></div></section>
@@ -3371,11 +3373,29 @@ window.previewOCRImages=function(e){
   function formatInfo(f){const raw=String(f||'').toLowerCase().replace(/\s+/g,'');const m=raw.match(/([1-4])v\1/);if(m){const n=+m[1];return {mode:n===1?'solo':n===2?'duo':'squad',need:n,team:n>1}}if(raw==='solo')return {mode:'solo',need:1,team:false};if(raw==='duo')return {mode:'duo',need:2,team:true};if(raw==='squad')return {mode:'squad',need:4,team:true};return {mode:'squad',need:4,team:true}}
   function status(r){const n=countApproved(r),max=Math.max(1,+r.maxSlots||1);if(r.status==='Completed'||r.status==='Cancelled')return r.status;if(n>=max)return 'FULL';if(r.status==='Live')return 'LIVE';return 'UPCOMING'}
   function dateText(v){if(!v)return 'Time not set';try{return new Date(v).toLocaleString()}catch(e){return String(v)}}
-  function renderAdminRooms(){const box=document.getElementById('publicRoomsList');if(!box)return;const a=ensureRooms();box.innerHTML=a.length?a.map(r=>{const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),thumb=r.thumbnail||'';return `<div class="notice" style="margin-top:9px">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="">`:''}<div style="display:flex;justify-content:space-between;gap:8px;margin-top:${thumb?'8px':'0'}"><div><b>🎮 ${escR(r.title)}</b><div class="small muted">${escR(r.category)} • ${escR(r.format)} • ${escR(r.map)}</div></div><b>${n}/${m}</b></div><div class="small" style="margin-top:6px">💰 Entry ₹${+r.entryFee||0} • 🏆 Prize ₹${+r.prizePool||0} • ⏰ ${escR(dateText(r.startAt))}</div><div class="small muted">${escR(status(r))}</div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full.')}</div></div><div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="editPublicRoom('${r.id}')">✏️ Edit</button><button onclick="duplicatePublicRoom('${r.id}')">📋 Duplicate</button><button class="danger" onclick="deletePublicRoom('${r.id}')">🗑️ Delete</button></div></div>`}).join(''):'<div class="empty">No public rooms yet.</div>'}
-  function renderPublicRooms(){const box=document.getElementById('pubContestsBox');if(!box)return;const a=ensureRooms();box.innerHTML=a.length?a.map(r=>{const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=left===0,thumb=r.thumbnail||'';return `<div class="publicCard" style="margin-bottom:16px;padding:12px">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="${escR(r.title)} thumbnail">`:''}<div style="display:flex;justify-content:space-between;gap:10px;margin-top:${thumb?'10px':'0'}"><div><div class="eyebrow">${escR(r.category)}</div><h2 style="margin:3px 0">${escR(r.title)}</h2><div class="muted small">${escR(r.format)} • ${escR(r.map)}</div></div><div class="statusPill ${full?'status-locked':roomState==='LIVE'?'status-live':'status-upcoming'}">${escR(status(r))}</div></div><div class="publicGrid" style="padding:10px 0 0"><div class="publicCard"><div class="muted">Prize Pool</div><b>₹${+r.prizePool||0}</b></div><div class="publicCard"><div class="muted">Entry Fee</div><b>₹${+r.entryFee||0}</b></div><div class="publicCard"><div class="muted">Slots</div><b>${n}/${m}</b></div><div class="publicCard"><div class="muted">Start</div><b style="font-size:12px">${escR(dateText(r.startAt))}</b></div></div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full. Payment is handled personally by the organizer.')}</div></div><div class="notice" style="margin-top:10px"><b>${full?'🔒 Joining Full':'🟢 '+left+' Spot'+(left===1?'':'s')+' Left'}</b></div><div class="small" style="margin-top:8px;white-space:pre-wrap">${escR(r.rules)}</div><button class="primary" style="margin-top:10px;width:100%" onclick="registerForPublicRoom('${r.id}')" ${full?'disabled':''}>📝 ${full?'Room Full':'Register in this Room'}</button></div>`}).join(''):'<div class="empty">No public contests are available yet.</div>'}
-  function fillForm(r){const map={roomTitle:'title',roomCategory:'category',roomFormat:'format',roomMap:'map',roomSlots:'maxSlots',roomFee:'entryFee',roomPrize:'prizePool',roomStart:'startAt',roomStatus:'status',roomPaymentNote:'paymentNote',roomRules:'rules'};const pi=document.getElementById('roomThumbPreview'),pimg=document.getElementById('roomThumbPreviewImg');if(pi&&pimg){pimg.src=r.thumbnail||'';pi.style.display=r.thumbnail?'block':'none'}Object.entries(map).forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.value=r[k]??''});const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]');if(b){b.dataset.editId=r.id;b.textContent='💾 Save Room'}}
-  window.clearPublicRoomForm=function(){const tf=document.getElementById('roomThumbnail');if(tf)tf.value='';const pi=document.getElementById('roomThumbPreview');if(pi)pi.style.display='none';const pimg=document.getElementById('roomThumbPreviewImg');if(pimg)pimg.src='';['roomTitle','roomMap','roomStart','roomPaymentNote','roomRules'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const vals={roomSlots:2,roomFee:0,roomPrize:0};Object.entries(vals).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v});['roomCategory','roomFormat','roomStatus'].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.value=i===0?'Custom':i===1?'1v1':'Upcoming'});const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]');if(b){delete b.dataset.editId;b.textContent='➕ Add Room'}};
-  window.savePublicRoom=function(){if(typeof v9Guard==='function'&&!v9Guard())return;const title=document.getElementById('roomTitle')?.value.trim();if(!title){alert('Enter a room/contest name.');return}const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]'),edit=b?.dataset.editId||'';const thumb=window.__aktanRoomThumbnailData||room(edit)?.thumbnail||'';const data={title,category:document.getElementById('roomCategory')?.value||'Custom',format:document.getElementById('roomFormat')?.value||'1v1',thumbnail:thumb,map:document.getElementById('roomMap')?.value.trim()||'Custom',maxSlots:Math.max(1,Math.min(1000,+document.getElementById('roomSlots')?.value||1)),entryFee:Math.max(0,+document.getElementById('roomFee')?.value||0),prizePool:Math.max(0,+document.getElementById('roomPrize')?.value||0),startAt:document.getElementById('roomStart')?.value||'',status:document.getElementById('roomStatus')?.value||'Upcoming',paymentNote:document.getElementById('roomPaymentNote')?.value.trim()||'Entry fee is taken only after all slots are full. Payment is handled personally by the organizer.',rules:document.getElementById('roomRules')?.value.trim()||'Follow the room rules shared by the organizer.'};const a=ensureRooms();if(edit){const r=room(edit);if(r)Object.assign(r,data)}else a.push(Object.assign({id:uid(),createdAt:Date.now()},data));syncSetupFromInputs();renderAdminRooms();renderPublicRooms();clearPublicRoomForm();toast(edit?'Room updated':'Public room added');if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150)};
+  function renderAdminRooms(){const box=document.getElementById('publicRoomsList');if(!box)return;const a=ensureRooms();box.innerHTML=a.length?a.map((r,i)=>{const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),thumb=r.thumbnail||'',rn=+r.roomNumber||i+1,mc=Math.max(1,+r.matchCount||1);return `<div class="notice" style="margin-top:9px">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="">`:''}<div style="display:flex;justify-content:space-between;gap:8px;margin-top:${thumb?'8px':'0'}"><div><b>🎮 ${escR(r.title)}</b><div class="small muted">Room #${rn} • ${escR(r.category)} • ${escR(r.format)} • 🗺 ${escR(r.map||'Custom')} • 🎮 ${mc} match${mc===1?'':'es'}</div></div><b>${n}/${m}</b></div><div class="small" style="margin-top:6px">💰 Entry ₹${+r.entryFee||0} • 🏆 Prize ₹${+r.prizePool||0} • ⏰ ${escR(dateText(r.startAt))}</div><div class="small muted">${escR(status(r))}</div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full.')}</div></div><div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="editPublicRoom('${r.id}')">✏️ Edit</button><button onclick="duplicatePublicRoom('${r.id}')">📋 Duplicate</button><button class="danger" onclick="deletePublicRoom('${r.id}')">🗑️ Delete</button></div></div>`}).join(''):'<div class="empty">No public rooms yet.</div>'}
+  function roomTimeValue(r){const t=Date.parse(r?.startAt||'');return Number.isFinite(t)?t:Number.MAX_SAFE_INTEGER}
+  function publicRoomGroups(a){
+    const groups=[
+      {key:'br',title:'⚔️ BATTLE GROUND',match:r=>String(r.category||'').toLowerCase()==='br'},
+      {key:'cs',title:'🛡️ CLASH SQUAD GAMES',match:r=>['cs headshot','cs body','clash squad'].includes(String(r.category||'').toLowerCase())},
+      {key:'lw',title:'🎯 LONE WOLF',match:r=>String(r.category||'').toLowerCase()==='lw headshot'},
+      {key:'custom',title:'✨ CUSTOM GAMES',match:r=>String(r.category||'').toLowerCase()==='custom'}
+    ];
+    const used=new Set(),out=[];
+    groups.forEach(g=>{const rooms=a.filter(g.match).sort((x,y)=>roomTimeValue(x)-roomTimeValue(y)||(+x.createdAt||0)-(+y.createdAt||0));if(rooms.length){rooms.forEach(r=>used.add(r.id));out.push({title:g.title,rooms})}});
+    const other=a.filter(r=>!used.has(r.id)).sort((x,y)=>roomTimeValue(x)-roomTimeValue(y)||(+x.createdAt||0)-(+y.createdAt||0));
+    if(other.length)out.push({title:'🎮 OTHER GAMES',rooms:other});
+    return out;
+  }
+  function publicRoomCard(r,roomIndex){
+    const n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=left===0,thumb=r.thumbnail||'',rn=+r.roomNumber||roomIndex+1,mc=Math.max(1,+r.matchCount||1);
+    return `<div class="publicCard publicRoomCompact">${thumb?`<img class="publicRoomThumb" src="${escR(thumb)}" alt="${escR(r.title)} thumbnail">`:''}<div style="display:flex;justify-content:space-between;gap:10px;margin-top:${thumb?'10px':'0'}"><div><div class="eyebrow">${escR(r.category)}</div><h2 style="margin:3px 0">${escR(r.title)}</h2><div class="muted small">Room #${rn} • ${escR(r.format)}</div></div><div class="statusPill ${full?'status-locked':status(r)==='LIVE'?'status-live':'status-upcoming'}">${escR(status(r))}</div></div><div class="publicRoomMeta"><span>🗺 ${escR(r.map||'Custom')}</span><span>🎮 ${mc} match${mc===1?'':'es'}</span><span>🎟 ${n}/${m} slots</span><span>⏰ ${escR(dateText(r.startAt))}</span></div><div class="publicGrid" style="padding:10px 0 0"><div class="publicCard"><div class="muted">Prize Pool</div><b>₹${+r.prizePool||0}</b></div><div class="publicCard"><div class="muted">Entry Fee</div><b>₹${+r.entryFee||0}</b></div><div class="publicCard"><div class="muted">Slots</div><b>${n}/${m}</b></div><div class="publicCard"><div class="muted">Matches</div><b>${mc}</b></div></div><div class="paymentBanner"><div class="big">💳 PAYMENT AFTER ALL SLOTS ARE FULL</div><div class="sub">${escR(r.paymentNote||'Entry fee is taken only after all slots are full. Payment is handled personally by the organizer.')}</div></div><div class="notice" style="margin-top:10px"><b>${full?'🔒 Joining Full':'🟢 '+left+' Spot'+(left===1?'':'s')+' Left'}</b></div><div class="small" style="margin-top:8px;white-space:pre-wrap">${escR(r.rules)}</div><button class="primary" style="margin-top:10px;width:100%" onclick="registerForPublicRoom('${r.id}')" ${full?'disabled':''}>📝 ${full?'Room Full':'Register in this Room'}</button></div>`;
+  }
+  function renderPublicRooms(){const box=document.getElementById('pubContestsBox');if(!box)return;const a=ensureRooms();const groups=publicRoomGroups(a);box.innerHTML=groups.length?groups.map(g=>`<div class="publicRoomCategory"><h2>${g.title}</h2><div class="publicRoomScroller">${g.rooms.map((r,i)=>publicRoomCard(r,i)).join('')}</div></div>`).join(''):'<div class="empty">No public contests are available yet.</div>'}
+  function fillForm(r){const map={roomTitle:'title',roomCategory:'category',roomNumber:'roomNumber',roomMatchCount:'matchCount',roomFormat:'format',roomMap:'map',roomSlots:'maxSlots',roomFee:'entryFee',roomPrize:'prizePool',roomStart:'startAt',roomStatus:'status',roomPaymentNote:'paymentNote',roomRules:'rules'};const pi=document.getElementById('roomThumbPreview'),pimg=document.getElementById('roomThumbPreviewImg');if(pi&&pimg){pimg.src=r.thumbnail||'';pi.style.display=r.thumbnail?'block':'none'}Object.entries(map).forEach(([id,k])=>{const e=document.getElementById(id);if(e)e.value=r[k]??''});const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]');if(b){b.dataset.editId=r.id;b.textContent='💾 Save Room'}}
+  window.clearPublicRoomForm=function(){const tf=document.getElementById('roomThumbnail');if(tf)tf.value='';const pi=document.getElementById('roomThumbPreview');if(pi)pi.style.display='none';const pimg=document.getElementById('roomThumbPreviewImg');if(pimg)pimg.src='';['roomTitle','roomNumber','roomMatchCount','roomMap','roomStart','roomPaymentNote','roomRules'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const vals={roomNumber:'',roomMatchCount:1,roomSlots:2,roomFee:0,roomPrize:0};Object.entries(vals).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v});['roomCategory','roomFormat','roomStatus'].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.value=i===0?'Custom':i===1?'1v1':'Upcoming'});const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]');if(b){delete b.dataset.editId;b.textContent='➕ Add Room'}};
+  window.savePublicRoom=function(){if(typeof v9Guard==='function'&&!v9Guard())return;const title=document.getElementById('roomTitle')?.value.trim();if(!title){alert('Enter a room/contest name.');return}const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]'),edit=b?.dataset.editId||'';const thumb=window.__aktanRoomThumbnailData||room(edit)?.thumbnail||'';const data={title,category:document.getElementById('roomCategory')?.value||'Custom',roomNumber:Math.max(0,+document.getElementById('roomNumber')?.value||0),matchCount:Math.max(1,Math.min(99,+document.getElementById('roomMatchCount')?.value||1)),format:document.getElementById('roomFormat')?.value||'1v1',thumbnail:thumb,map:document.getElementById('roomMap')?.value.trim()||'Custom',maxSlots:Math.max(1,Math.min(1000,+document.getElementById('roomSlots')?.value||1)),entryFee:Math.max(0,+document.getElementById('roomFee')?.value||0),prizePool:Math.max(0,+document.getElementById('roomPrize')?.value||0),startAt:document.getElementById('roomStart')?.value||'',status:document.getElementById('roomStatus')?.value||'Upcoming',paymentNote:document.getElementById('roomPaymentNote')?.value.trim()||'Entry fee is taken only after all slots are full. Payment is handled personally by the organizer.',rules:document.getElementById('roomRules')?.value.trim()||'Follow the room rules shared by the organizer.'};const a=ensureRooms();if(edit){const r=room(edit);if(r)Object.assign(r,data)}else a.push(Object.assign({id:uid(),createdAt:Date.now()},data));syncSetupFromInputs();renderAdminRooms();renderPublicRooms();clearPublicRoomForm();toast(edit?'Room updated':'Public room added');if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150)};
   window.editPublicRoom=function(id){const r=room(id);if(!r)return;fillForm(r);document.getElementById('publicRoomsCard')?.scrollIntoView({behavior:'smooth',block:'start'})};
   window.duplicatePublicRoom=function(id){const r=room(id);if(!r)return;ensureRooms().push(Object.assign({},r,{id:uid(),title:r.title+' — COPY',createdAt:Date.now()}));syncSetupFromInputs();renderAdminRooms();renderPublicRooms();toast('Room duplicated');if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150)};
   window.deletePublicRoom=function(id){if(typeof v9Guard==='function'&&!v9Guard())return;const r=room(id);if(!r)return;if(!confirm('Delete '+r.title+'? Existing teams are not deleted.'))return;S.publicContests=ensureRooms().filter(x=>x.id!==id);syncSetupFromInputs();renderAdminRooms();renderPublicRooms();toast('Room deleted');if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150)};
@@ -3658,7 +3678,7 @@ window.previewOCRImages=function(e){
   const countFor=r=>typeof countApproved==='function'?countApproved(r):teamsFor(r?.id).length;
   const maxFor=r=>Math.max(1,+r?.maxSlots||1);
   const pct=(n,m)=>Math.min(100,Math.round((n/m)*100));
-  const roomStatus=r=>{const n=countFor(r),m=maxFor(r);if(r?.status==='Completed'||r?.status==='Cancelled')return String(r.status).toUpperCase();if(n>=m)return 'FULL';if(r?.status==='Live')return 'LIVE';return 'OPEN'};
+  const roomStatus=r=>typeof status==='function'?String(status(r)||'OPEN').toUpperCase():'OPEN';
   const isFull=r=>countFor(r)>=maxFor(r);
   const isLive=r=>roomStatus(r)==='LIVE';
   const selectedId=()=>window.__aktanPublicRoomId && window.__aktanPublicRoomId!=='all'?window.__aktanPublicRoomId:(S.publicSelectedRoom||'');
@@ -3863,306 +3883,51 @@ window.previewOCRImages=function(e){
   setTimeout(apply,0);setTimeout(apply,200);setTimeout(apply,800);setTimeout(apply,1500);
 })();
 </script>
-
-<style id="AKTanModeGroupsV1CSS">
-/* AKTan Mode Groups / Public Control Studio V1 */
-#aktanModeGroupsAdmin{margin:12px 0;padding:16px;border-radius:18px;border:1px solid rgba(255,176,0,.22);background:linear-gradient(145deg,rgba(255,176,0,.08),rgba(126,76,255,.07),rgba(0,0,0,.18));box-shadow:0 10px 32px rgba(0,0,0,.22)}
-#aktanModeGroupsAdmin h3{margin:0 0 6px}
-.aktanModeGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.aktanModeItem{padding:12px;border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.18)}
-.aktanModeItem .thumb{width:100%;aspect-ratio:16/7;border-radius:11px;object-fit:cover;background:#111827;border:1px solid var(--line);display:block;margin:8px 0}
-.aktanModeItem .modeRow{display:flex;align-items:center;gap:9px}
-.aktanModeItem input[type=text],.aktanModeItem input[type=url]{width:100%}
-.aktanModeTools{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-#aktanPublicStudioAdmin{margin-top:12px}
-#aktanPublicStudioAdmin .studioSection{padding:13px;border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.16);margin-top:10px}
-.aktanSocialGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.aktanPublicNotice{margin:0 auto 12px;max-width:1120px;padding:12px 14px;border-radius:15px;background:linear-gradient(135deg,rgba(255,176,0,.14),rgba(126,76,255,.12));border:1px solid rgba(255,255,255,.10);font-weight:800}
-.aktanPublicNotice .small{font-weight:500}
-.aktanSocialBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px auto 12px;max-width:1120px}
-.aktanSocialBar a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--text);padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-weight:800;font-size:12px}
-.aktanGroupGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
-.aktanGroupCard{position:relative;overflow:hidden;min-height:150px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:#0c111b;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.24);transition:.18s transform,.18s border-color}
-.aktanGroupCard:hover{transform:translateY(-2px);border-color:rgba(255,176,0,.55)}
-.aktanGroupCard img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.46}
-.aktanGroupCard:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,7,14,.92),rgba(3,7,14,.35),rgba(3,7,14,.72))}
-.aktanGroupContent{position:relative;z-index:1;padding:18px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end}
-.aktanGroupContent .title{font-size:21px;font-weight:950;letter-spacing:.3px}
-.aktanGroupContent .desc{color:#c9d2e2;font-size:12px;margin-top:4px}
-.aktanGroupContent .count{margin-top:8px;font-size:12px;color:#ffd36a;font-weight:800}
-.aktanRoomGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 9px}
-.aktanRoomGroupHeader h3{margin:0}
-.aktanRoomGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.aktanRoomCardV1{overflow:hidden;padding:0!important}
-.aktanRoomCardV1 .roomImg{width:100%;aspect-ratio:16/7;object-fit:cover;background:#0d111a;display:block}
-.aktanRoomCardV1 .roomBody{padding:13px}
-.aktanRoomMeta{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-.aktanPill{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-.aktanMatchNo{color:#ffd166;font-weight:950}
-.aktanLockBanner{padding:11px 13px;border-radius:13px;background:rgba(255,176,0,.08);border:1px solid rgba(255,176,0,.22);margin:8px 0;font-size:12px;font-weight:800}
-.aktanSocialEdit{font-size:12px;color:var(--muted);margin-top:4px}
-@media(max-width:700px){.aktanModeGrid,.aktanGroupGrid,.aktanRoomGrid,.aktanSocialGrid{grid-template-columns:1fr}}
-/* Public mode cards: never let an image/overlay or mobile gesture swallow the tap. */
-.aktanGroupCard{position:relative;z-index:2;cursor:pointer;touch-action:manipulation;pointer-events:auto!important}
-.aktanGroupCard{text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent;display:block;width:100%;border:0;text-align:left;font:inherit;padding:0;background:#0c111b;appearance:none;-webkit-appearance:none;}
-.aktanGroupCard *{pointer-events:none}
-</style>
-
-
-<script id="AKTanModeGroupsV1">
+<script id="AKTanPublicPromoRuntime">
 (function(){
-'use strict';
-const escMG=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const uidMG=()=>typeof uid==='function'?uid():'mg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-const defaults=[
- {id:'br',name:'Battle Royale',short:'BR',description:'Battle Ground / BR matches',thumbnail:'',icon:'🏆'},
- {id:'cs',name:'Clash Squad',short:'CS',description:'Clash Squad matches',thumbnail:'',icon:'⚔️'},
- {id:'lw',name:'Lone Wolf',short:'LW',description:'Lone Wolf / 1v1 matches',thumbnail:'',icon:'🐺'},
- {id:'custom',name:'Custom Games',short:'CUSTOM',description:'Other custom matches',thumbnail:'',icon:'🎮'}
-];
-function ensureMG(){
- S.modeGroups=Array.isArray(S.modeGroups)?S.modeGroups:[];
- defaults.forEach(d=>{if(!S.modeGroups.some(x=>String(x.id)===d.id))S.modeGroups.push({...d});});
- S.publicLocks=S.publicLocks||{leaderboard:false,matches:false,leaderboardRoom:'',leaderboardMode:'overall',matchIndex:0};
- S.publicAnnouncement=S.publicAnnouncement||'';
- S.publicSocial=S.publicSocial||{youtube:'',whatsapp:'',instagram:''};
- (S.publicContests||[]).forEach(r=>{
-   if(!r.gameGroup) r.gameGroup=deriveGroup(r);
-   if(!r.matchNumber) r.matchNumber=1;
- });
- return S.modeGroups;
-}
-function deriveGroup(r){
- const s=(String(r?.category||'')+' '+String(r?.title||'')).toLowerCase();
- if(/\b(br|battle royale|battleground|battle ground)\b/.test(s)) return 'br';
- if(/\b(cs|clash squad)\b/.test(s)) return 'cs';
- if(/\b(lw|lone wolf|headshot)\b/.test(s)) return 'lw';
- return 'custom';
-}
-function groupById(id){return ensureMG().find(x=>String(x.id)===String(id))||ensureMG().find(x=>x.id==='custom')}
-function groupRooms(id){return (Array.isArray(S.publicContests)?S.publicContests:[]).filter(r=>String(r.gameGroup||deriveGroup(r))===String(id))}
-function persistMG(publish=true){
- if(typeof syncSetupFromInputs==='function')syncSetupFromInputs(); else if(typeof save==='function')save();
- if(publish&&localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),100);
-}
-function thumbData(input,cb){
- const f=input?.files?.[0]; if(!f||!f.type.startsWith('image/')){cb('');return}
- const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{
-   const maxW=1000,maxH=420,sc=Math.min(1,maxW/im.width,maxH/im.height),c=document.createElement('canvas');
-   c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));
-   c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.78));
- };im.src=rd.result};rd.readAsDataURL(f);
-}
-function adminPanel(){
- if(document.getElementById('aktanModeGroupsAdmin'))return;
- const target=document.getElementById('publicRoomsCard');if(!target)return;
- const wrap=document.createElement('div');wrap.id='aktanModeGroupsAdmin';
- wrap.innerHTML=`<h3>🎮 Game Mode Groups</h3>
- <div class="small muted">Create visual groups so players can choose Battle Royale, Clash Squad, Lone Wolf or your own custom category before seeing rooms.</div>
- <div id="aktanModeGroupList" class="aktanModeGrid"></div>
- <div class="aktanModeTools"><button type="button" class="primary" id="aktanAddCustomGroup">➕ Add Custom Game Group</button></div>
- <div id="aktanPublicStudioAdmin"></div>`;
- target.parentNode.insertBefore(wrap,target);
- renderAdminMG();
-}
-function renderAdminMG(){
- ensureMG();const list=document.getElementById('aktanModeGroupList');if(!list)return;
- list.innerHTML=ensureMG().map(g=>`<div class="aktanModeItem">
- <div class="modeRow"><b>${escMG(g.icon||'🎮')} ${escMG(g.name)}</b><span class="small muted">${escMG(g.short||'CUSTOM')}</span></div>
- ${g.thumbnail?`<img class="thumb" src="${escMG(g.thumbnail)}">`:`<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:42px">${escMG(g.icon||'🎮')}</div>`}
- <label>Name<input type="text" data-mg-name="${escMG(g.id)}" value="${escMG(g.name)}"></label>
- <label style="margin-top:7px">Short label<input type="text" data-mg-short="${escMG(g.id)}" value="${escMG(g.short||'')}"></label>
- <label style="margin-top:7px">Description<input type="text" data-mg-desc="${escMG(g.id)}" value="${escMG(g.description||'')}"></label>
- <label style="margin-top:7px">Thumbnail<input type="file" accept="image/*" data-mg-file="${escMG(g.id)}"></label>
- <div class="aktanModeTools"><button type="button" onclick="window.aktanSaveGroup('${escMG(g.id)}')">💾 Save Group</button>${g.id!=='br'&&g.id!=='cs'&&g.id!=='lw'&&g.id!=='custom'?`<button type="button" class="danger" onclick="window.aktanDeleteGroup('${escMG(g.id)}')">🗑️ Delete</button>`:''}</div>
- </div>`).join('');
- document.querySelectorAll('[data-mg-file]').forEach(inp=>inp.onchange=()=>thumbData(inp,data=>{inp.dataset.data=data}));
- renderPublicStudioAdmin();
-}
-window.aktanSaveGroup=function(id){
- ensureMG();const g=groupById(id);if(!g)return;
- const n=document.querySelector(`[data-mg-name="${CSS.escape(id)}"]`),sh=document.querySelector(`[data-mg-short="${CSS.escape(id)}"]`),d=document.querySelector(`[data-mg-desc="${CSS.escape(id)}"]`),f=document.querySelector(`[data-mg-file="${CSS.escape(id)}"]`);
- g.name=n?.value.trim()||g.name;g.short=sh?.value.trim()||g.short;g.description=d?.value.trim()||g.description;
- if(f?.dataset.data)g.thumbnail=f.dataset.data;
- persistMG();renderAdminMG();renderPublicMG();
-};
-window.aktanDeleteGroup=function(id){
- if(['br','cs','lw','custom'].includes(id))return;
- const rooms=groupRooms(id);if(rooms.length&&!confirm('This group has rooms. Move them to Custom Games and delete the group?'))return;
- rooms.forEach(r=>r.gameGroup='custom');S.modeGroups=ensureMG().filter(x=>x.id!==id);persistMG();renderAdminMG();renderPublicMG();
-};
-function addCustomGroup(){
- const name=prompt('Game group name','Custom Mode');if(!name?.trim())return;
- const id='g_'+uidMG();ensureMG().push({id,name:name.trim(),short:'CUSTOM',description:'Custom matches',thumbnail:'',icon:'🎮'});persistMG();renderAdminMG();
-}
-function addRoomFields(){
- const cat=document.getElementById('roomCategory');if(!cat||document.getElementById('roomGameGroup'))return;
- const host=cat.parentElement;
- const div=document.createElement('div');div.style.marginTop='10px';
- div.innerHTML=`<label>Game Mode Group</label><select id="roomGameGroup">${ensureMG().map(g=>`<option value="${escMG(g.id)}">${escMG(g.icon||'🎮')} ${escMG(g.name)}</option>`).join('')}</select>`;
- host.insertAdjacentElement('afterend',div);
- const map=document.getElementById('roomMap');if(map&&!document.getElementById('roomMatchNumber')){
-   const d2=document.createElement('div');d2.style.marginTop='10px';d2.innerHTML=`<label>Match Number</label><input id="roomMatchNumber" type="number" min="1" max="999" value="1" placeholder="1">`;map.parentElement.insertAdjacentElement('afterend',d2);
- }
-}
-function wrapRoomFns(){
- if(window.__aktanMGWrapped)return;window.__aktanMGWrapped=true;
- const oldSave=window.savePublicRoom,oldEdit=window.editPublicRoom,oldClear=window.clearPublicRoomForm;
- window.savePublicRoom=function(){
-   addRoomFields();
-   const title=document.getElementById('roomTitle')?.value.trim(),b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]'),edit=b?.dataset.editId||'';
-   const gg=document.getElementById('roomGameGroup')?.value||deriveGroup({title,category:document.getElementById('roomCategory')?.value});
-   const mn=Math.max(1,Math.min(999,+document.getElementById('roomMatchNumber')?.value||1));
-   oldSave?.apply(this,arguments);
-   const r=edit?room(edit):ensureRooms().find(x=>x.title===title);
-   if(r){r.gameGroup=gg;r.matchNumber=mn;}
-   persistMG();renderPublicMG();renderAdminMG();
- };
- window.editPublicRoom=function(id){addRoomFields();oldEdit?.call(this,id);const r=room(id);if(r){const g=document.getElementById('roomGameGroup');if(g)g.value=r.gameGroup||deriveGroup(r);const m=document.getElementById('roomMatchNumber');if(m)m.value=r.matchNumber||1;}};
- window.clearPublicRoomForm=function(){oldClear?.apply(this,arguments);setTimeout(()=>{addRoomFields();const g=document.getElementById('roomGameGroup');if(g)g.value='custom';const m=document.getElementById('roomMatchNumber');if(m)m.value=1;},0)};
-}
-function renderAdminStudioControls(){
- const box=document.getElementById('aktanPublicStudioAdmin');if(!box)return;
- ensureMG();const L=S.publicLocks;
- box.innerHTML=`<div class="studioSection"><h3 style="margin:0 0 4px">🔒 Public Display Lock</h3>
- <div class="small muted">Lock the public leaderboard or matches so players cannot change what is being displayed during a big event.</div>
- <label style="margin-top:10px"><input type="checkbox" id="aktanLockLeaderboard" ${L.leaderboard?'checked':''}> Lock public Leaderboard</label>
- <div class="grid g2" style="margin-top:8px"><label>Leaderboard Room<select id="aktanLockRoom"><option value="">All Rooms</option>${ensureRooms().map(r=>`<option value="${escMG(r.id)}">${escMG(r.title)}</option>`).join('')}</select></label>
- <label>Leaderboard View<select id="aktanLockView"><option value="overall">Overall</option>${Array.from({length:Math.max(1,+S.matches||1)},(_,i)=>`<option value="match:${i}">Match ${i+1}</option>`).join('')}<option value="killers">Kill Leaderboard</option></select></label></div>
- <label style="margin-top:10px"><input type="checkbox" id="aktanLockMatches" ${L.matches?'checked':''}> Lock public Matches section</label>
- <label style="margin-top:8px">Match to show<select id="aktanLockMatch">${Array.from({length:Math.max(1,+S.matches||1)},(_,i)=>`<option value="${i}">Match ${i+1}${S.schedule?.[i]?.map?' • '+escMG(S.schedule[i].map):''}</option>`).join('')}</select></label>
- <div class="aktanModeTools"><button type="button" class="primary" id="aktanSaveLocks">🔒 Save Display Locks</button><button type="button" id="aktanUnlockAll">🔓 Unlock All</button></div></div>
- <div class="studioSection"><h3 style="margin:0 0 4px">🔔 Public Notification</h3><label>Notification message<input id="aktanAnnouncement" maxlength="180" value="${escMG(S.publicAnnouncement)}" placeholder="Example: 🔥 Grand Final starts at 8:00 PM"></label><div class="aktanModeTools"><button type="button" class="primary" id="aktanSaveAnnouncement">📢 Publish Notification</button><button type="button" id="aktanClearAnnouncement">✕ Clear</button></div></div>
- <div class="studioSection"><h3 style="margin:0 0 4px">🔗 Social / Promotion Links</h3><div class="aktanSocialGrid">
- <label>▶️ YouTube<input id="aktanYT" type="url" value="${escMG(S.publicSocial.youtube)}" placeholder="https://youtube.com/..."></label>
- <label>💬 WhatsApp<input id="aktanWA" type="url" value="${escMG(S.publicSocial.whatsapp)}" placeholder="https://wa.me/..."></label>
- <label>📸 Instagram<input id="aktanIG" type="url" value="${escMG(S.publicSocial.instagram)}" placeholder="https://instagram.com/..."></label>
- </div><div class="aktanModeTools"><button type="button" class="primary" id="aktanSaveSocial">💾 Save Links</button></div></div>`;
- document.getElementById('aktanLockRoom').value=L.leaderboardRoom||'';
- document.getElementById('aktanLockView').value=L.leaderboardMode||'overall';
- document.getElementById('aktanLockMatch').value=String(L.matchIndex||0);
- document.getElementById('aktanSaveLocks').onclick=()=>{S.publicLocks={leaderboard:!!document.getElementById('aktanLockLeaderboard').checked,matches:!!document.getElementById('aktanLockMatches').checked,leaderboardRoom:document.getElementById('aktanLockRoom').value,leaderboardMode:document.getElementById('aktanLockView').value,matchIndex:+document.getElementById('aktanLockMatch').value||0};persistMG();renderPublicMG();renderAdminStudioControls();toast('Public display locks saved')};
- document.getElementById('aktanUnlockAll').onclick=()=>{S.publicLocks={leaderboard:false,matches:false,leaderboardRoom:'',leaderboardMode:'overall',matchIndex:0};persistMG();renderPublicMG();renderAdminStudioControls();toast('Public display unlocked')};
- document.getElementById('aktanSaveAnnouncement').onclick=()=>{S.publicAnnouncement=document.getElementById('aktanAnnouncement').value.trim();persistMG();renderPublicMG();toast('Public notification published')};
- document.getElementById('aktanClearAnnouncement').onclick=()=>{S.publicAnnouncement='';persistMG();renderPublicMG();renderAdminStudioControls()};
- document.getElementById('aktanSaveSocial').onclick=()=>{S.publicSocial={youtube:document.getElementById('aktanYT').value.trim(),whatsapp:document.getElementById('aktanWA').value.trim(),instagram:document.getElementById('aktanIG').value.trim()};persistMG();renderPublicMG();toast('Social links saved')};
-}
-function renderPublicStudioAdmin(){renderAdminStudioControls()}
-function groupCardHTML(g){
- const rs=groupRooms(g.id);
- const gid=escMG(g.id);
- return `<button type="button" class="aktanGroupCard" data-aktan-mode-id="${gid}" aria-label="Open ${escMG(g.name)} rooms" onclick="window.aktanSelectGroup('${gid}');return false" onpointerup="window.aktanSelectGroup('${gid}');return false" ontouchend="window.aktanSelectGroup('${gid}');return false">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<span class="aktanGroupContent"><span class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</span><span class="desc">${escMG(g.description||'Choose this game mode')}</span><span class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</span></span></button>`;
-}
-function roomCardHTML(r){
- const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
- const roomState=(r.status==='Completed'||r.status==='Cancelled')?r.status:(n>=m?'FULL':(r.status==='Live'?'LIVE':'UPCOMING'));
- return `<div class="publicCard aktanRoomCardV1"><img class="roomImg" src="${escMG(r.thumbnail||g.thumbnail||'')}" onerror="this.style.display='none'" alt="">
- <div class="roomBody"><div class="eyebrow">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div style="display:flex;justify-content:space-between;gap:8px"><h3 style="margin:2px 0">${escMG(r.title)}</h3><span class="statusPill ${full?'status-locked':status(r)==='LIVE'?'status-live':'status-upcoming'}">${escMG(roomState)}</span></div>
- <div class="aktanRoomMeta"><span class="aktanPill">🎯 Match ${+r.matchNumber||1}</span><span class="aktanPill">🗺️ ${escMG(r.map||'Custom')}</span><span class="aktanPill">🎮 ${escMG(r.format||'')}</span><span class="aktanPill">🎟️ ${n}/${m}</span></div>
- <div class="publicGrid" style="padding:4px 0"><div class="publicCard"><div class="muted">Prize</div><b>₹${+r.prizePool||0}</b></div><div class="publicCard"><div class="muted">Entry</div><b>₹${+r.entryFee||0}</b></div><div class="publicCard"><div class="muted">Start</div><b style="font-size:12px">${escMG(dateText(r.startAt))}</b></div></div>
- <div class="small muted">${escMG(r.rules||'')}</div><button class="primary" style="margin-top:10px;width:100%" onclick="registerForPublicRoom('${escMG(r.id)}')" ${full?'disabled':''}>📝 ${full?'Room Full':'Register in this Room'}</button></div></div>`;
-}
-function renderPublicMG(){
- ensureMG();
- const box=document.getElementById('pubContestsBox');
- if(!box)return;
- /* V28: Direct room listing. Mode cards are intentionally removed so the public page
-    never depends on mode selection/click handlers to reveal rooms. */
- const groups=ensureMG();
- const sections=groups.map(g=>{
-   const rs=groupRooms(g.id);
-   return `<section class="aktanDirectRoomSection" data-mode-group="${escMG(g.id)}">
-     <div class="aktanDirectRoomHeader">
-       <div>
-         <h3>${escMG(g.icon||'🎮')} ${escMG(g.name)}</h3>
-         <div class="small muted">${escMG(g.description||'')} • ${rs.length} match${rs.length===1?'':'es'}</div>
-       </div>
-     </div>
-     ${rs.length?`<div class="aktanRoomGrid">${rs.map(roomCardHTML).join('')}</div>`:`<div class="empty">No matches in this game mode yet.</div>`}
-   </section>`;
- }).join('');
- box.innerHTML=`<div class="aktanDirectRoomsTitle"><h2>🎮 Available Rooms</h2><div class="small muted">Choose a room below to view details and register.</div></div>${sections}`;
-}
-window.aktanSelectGroup=function(id){
- const next=String(id||'').trim();
- if(next && !ensureMG().some(x=>String(x.id)===next))return false;
- window.__aktanMGSelectedGroup=next;
- try{history.replaceState(null,'',next?'#aktan-mode-'+encodeURIComponent(next):location.pathname+location.search);}catch(e){}
- const box=document.getElementById('pubContestsBox');
- if(!box)return false;
- renderPublicMG();
- requestAnimationFrame(()=>{const h=box.querySelector('.aktanRoomGroupHeader');if(h)h.scrollIntoView({block:'start',behavior:'instant'});});
- return false;
-};
-
-function syncModeFromHash(){
- const m=String(location.hash||'').match(/^#aktan-mode-(.+)$/);
- const id=m?decodeURIComponent(m[1]):'';
- if(id && ensureMG().some(x=>String(x.id)===id)) window.__aktanMGSelectedGroup=id;
- else if(!id) window.__aktanMGSelectedGroup='';
-}
-
-function bindPublicModeClicks(){
- const box=document.getElementById('pubContestsBox');
- if(!box)return;
- if(box.dataset.aktanModeClickBound==='1')return;
- box.dataset.aktanModeClickBound='1';
- const activate=function(ev){
-   const card=ev.target&&ev.target.closest?ev.target.closest('[data-aktan-mode-id]'):null;
-   if(!card||!box.contains(card))return;
-   const id=card.getAttribute('data-aktan-mode-id')||'';
-   if(!id)return;
-   ev.preventDefault?.();
-   ev.stopPropagation?.();
-   window.aktanSelectGroup(id);
- };
- box.addEventListener('click',activate,true);
- box.addEventListener('pointerup',activate,true);
- box.addEventListener('touchend',activate,{passive:false,capture:true});
-}
-
-function publicOverlay(){
- const app=document.getElementById('publicApp');if(!app)return;
- let top=app.querySelector('#aktanPublicExtras');if(!top){top=document.createElement('div');top.id='aktanPublicExtras';const anchor=app.querySelector('.publicTop');anchor?.insertAdjacentElement('afterend',top);}
- const note=S.publicAnnouncement?`<div class="aktanPublicNotice">🔔 ${escMG(S.publicAnnouncement)}</div>`:'';
- const links=[];if(S.publicSocial?.youtube)links.push(`<a href="${escMG(S.publicSocial.youtube)}" target="_blank" rel="noopener">▶️ YouTube</a>`);if(S.publicSocial?.whatsapp)links.push(`<a href="${escMG(S.publicSocial.whatsapp)}" target="_blank" rel="noopener">💬 WhatsApp</a>`);if(S.publicSocial?.instagram)links.push(`<a href="${escMG(S.publicSocial.instagram)}" target="_blank" rel="noopener">📸 Instagram</a>`);
- top.innerHTML=note+(links.length?`<div class="aktanSocialBar">${links.join('')}</div>`:'');
- const L=S.publicLocks||{};document.body.classList.toggle('aktanLeaderboardLocked',!!L.leaderboard);document.body.classList.toggle('aktanMatchesLocked',!!L.matches);
- if(L.leaderboard){
-   S.publicSelectedRoom=L.leaderboardRoom||'';S.publicLeaderboardContestId=S.publicSelectedRoom;
-   window.__aktanPublicRoomId=S.publicSelectedRoom||'all';window.__aktanPublicBoard=L.leaderboardMode||'overall';
-   const b=document.getElementById('pubBoardSelect');if(b)b.value=window.__aktanPublicBoard;
- }
-}
-function enforceLocks(){
- const L=S.publicLocks||{};
- if(L.leaderboard){S.publicSelectedRoom=L.leaderboardRoom||'';S.publicLeaderboardContestId=S.publicSelectedRoom;window.__aktanPublicRoomId=S.publicSelectedRoom||'all';window.__aktanPublicBoard=L.leaderboardMode||'overall';}
- publicOverlay();
- if(L.matches){
-   const box=document.getElementById('pubMatchesBox');if(box){
-     const i=Math.max(0,+L.matchIndex||0),m=(S.schedule||[])[i];
-     box.innerHTML=m?`<div class="aktanLockBanner">🔒 Match display locked by organizer</div><div class="publicCard"><b>Match ${i+1}</b><span class="right">${escMG(m.map||'Random')}</span><div class="publicStatus ${m.status==='Live'?'statusLive':m.status==='Completed'||m.status==='Locked'?'statusDone':'statusUpcoming'}">${escMG(m.status||'Upcoming')}</div></div>`:'<div class="empty">Selected match is not available yet.</div>';
-   }
- }
-}
-function addLockCSS(){
- if(document.getElementById('aktanLockCSS'))return;const st=document.createElement('style');st.id='aktanLockCSS';st.textContent='.aktanLeaderboardLocked #pubRank .publicSelectBar,.aktanLeaderboardLocked #pubHome .publicSelectBar{display:none!important}.aktanMatchesLocked #pubMatchesPage .publicHero+*{}';document.head.appendChild(st);
-}
-function hooks(){
- ensureMG();addLockCSS();adminPanel();addRoomFields();wrapRoomFns();
- const btn=document.getElementById('aktanAddCustomGroup');if(btn)btn.onclick=addCustomGroup;
- const oldRPA=window.renderPublicApp;if(!window.__aktanMGRenderWrapped){
-   window.__aktanMGRenderWrapped=true;
-   window.renderPublicApp=function(){oldRPA?.apply(this,arguments);ensureMG();addRoomFields();adminPanel();renderPublicMG();publicOverlay();enforceLocks();};
-   const oldSec=window.publicSection;window.publicSection=function(id){oldSec?.apply(this,arguments);if(id==='pubContests')setTimeout(renderPublicMG,0);setTimeout(enforceLocks,0);};
- }
- syncModeFromHash();syncModeFromHash();renderAdminMG();renderPublicMG();publicOverlay();enforceLocks();
-}
-document.addEventListener('DOMContentLoaded',()=>setTimeout(hooks,50));
-setTimeout(hooks,700);
+  const oldSave=window.save;
+  if(typeof oldSave==='function') window.save=function(){oldSave(); if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')) setTimeout(()=>publishPublicShare(),300);};
+  function promoDefaults(){return {enabled:true,title:'📢 Notification',message:'',youtube:'',whatsapp:'',instagram:''};}
+  function getPromo(){S.publicPromo=Object.assign(promoDefaults(),S.publicPromo||{});return S.publicPromo;}
+  function validSocialUrl(v){v=String(v||'').trim();if(!v)return '';return /^https?:\/\//i.test(v)?v:'';}
+  window.renderPublicPromo=function(){
+    const p=getPromo();
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??''};
+    const chk=document.getElementById('publicNoticeEnabled');if(chk)chk.checked=p.enabled!==false;
+    set('publicNoticeTitle',p.title);set('publicNoticeMessage',p.message);set('publicYoutubeLink',p.youtube);set('publicWhatsappLink',p.whatsapp);set('publicInstagramLink',p.instagram);
+    const banner=document.getElementById('publicNoticeBanner');
+    if(banner){banner.style.display=p.enabled&&(p.title||p.message)?'block':'none';const t=banner.querySelector('[data-promo-title]'),m=banner.querySelector('[data-promo-message]');if(t)t.textContent=p.title||'📢 Notification';if(m)m.textContent=p.message||'';}
+    const social=document.getElementById('publicSocialLinks');
+    if(social){const links=[['youtube','▶️ YouTube',p.youtube],['whatsapp','💬 WhatsApp',p.whatsapp],['instagram','📸 Instagram',p.instagram]].filter(x=>x[2]);social.innerHTML=links.map(x=>'<a href="'+escR(x[2])+'" target="_blank" rel="noopener noreferrer" class="publicSocialBtn">'+x[1]+'</a>').join('');social.style.display=links.length?'flex':'none';}
+  };
+  window.savePublicPromoSettings=function(){
+    if(typeof v9Guard==='function'&&!v9Guard())return;
+    const p=getPromo();p.enabled=document.getElementById('publicNoticeEnabled')?.checked!==false;p.title=document.getElementById('publicNoticeTitle')?.value.trim()||'📢 Notification';p.message=document.getElementById('publicNoticeMessage')?.value.trim()||'';
+    p.youtube=validSocialUrl(document.getElementById('publicYoutubeLink')?.value);p.whatsapp=validSocialUrl(document.getElementById('publicWhatsappLink')?.value);p.instagram=validSocialUrl(document.getElementById('publicInstagramLink')?.value);
+    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} renderPublicPromo();const st=document.getElementById('publicPromoStatus');if(st)st.textContent='✓ Notification and social links saved.';
+    if(localStorage.getItem('AKTan_Public_Token_v1')&&typeof publishPublicShare==='function')setTimeout(()=>publishPublicShare(),150);
+  };
+  const oldRenderAll=window.renderAll;
+  if(typeof oldRenderAll==='function')window.renderAll=function(){oldRenderAll.apply(this,arguments);setTimeout(()=>{if(typeof renderPublicPromo==='function')renderPublicPromo()},0)};
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>renderPublicPromo(),0));
 })();
 </script>
-
+<style id="AKTanPublicPromoStyles">
+#publicPromoCard{border:1px solid rgba(255,176,0,.25)}
+#publicPromoCard input,#publicPromoCard textarea{box-sizing:border-box}
+#publicNoticeBanner{margin:10px 12px 0;border:1px solid rgba(255,176,0,.35);border-radius:14px;padding:10px 14px;background:linear-gradient(135deg,rgba(255,176,0,.12),rgba(255,107,0,.08));box-shadow:0 6px 24px rgba(0,0,0,.16)}
+#publicNoticeBanner [data-promo-title]{font-weight:800}
+#publicNoticeBanner [data-promo-message]{margin-top:3px;font-size:13px;opacity:.9;white-space:pre-wrap}
+#publicSocialLinks{display:none;gap:8px;flex-wrap:wrap;padding:8px 12px 0}
+.publicSocialBtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:inherit;font-weight:700;font-size:12px}
+.publicRoomCategory{margin:18px 0 22px}
+.publicRoomCategory>h2{margin:0 0 10px;font-size:18px}
+.publicRoomScroller{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.publicRoomScroller>.publicRoomCompact{flex:0 0 min(350px,88vw);scroll-snap-align:start;margin:0}
+.publicRoomMeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;font-weight:700}
+.publicRoomMeta span{padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.06)}
+@media(min-width:900px){.publicRoomScroller>.publicRoomCompact{flex-basis:340px}}
+</style>
 </body>
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
