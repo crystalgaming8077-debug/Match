@@ -3895,7 +3895,7 @@ window.previewOCRImages=function(e){
 @media(max-width:700px){.aktanModeGrid,.aktanGroupGrid,.aktanRoomGrid,.aktanSocialGrid{grid-template-columns:1fr}}
 /* Public mode cards: never let an image/overlay or mobile gesture swallow the tap. */
 .aktanGroupCard{position:relative;z-index:2;cursor:pointer;touch-action:manipulation;pointer-events:auto!important}
-.aktanGroupCard{text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent;display:block;}
+.aktanGroupCard{text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent;display:block;width:100%;border:0;text-align:left;font:inherit;padding:0;background:#0c111b;appearance:none;-webkit-appearance:none;}
 .aktanGroupCard *{pointer-events:none}
 </style>
 
@@ -4042,7 +4042,7 @@ function renderPublicStudioAdmin(){renderAdminStudioControls()}
 function groupCardHTML(g){
  const rs=groupRooms(g.id);
  const gid=escMG(g.id);
- return `<a class="aktanGroupCard" data-aktan-mode-id="${gid}" aria-label="Open ${escMG(g.name)} rooms" href="#aktan-mode-${gid}" onclick="window.aktanSelectGroup('${gid}')">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<div class="aktanGroupContent"><div class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</div><div class="desc">${escMG(g.description||'Choose this game mode')}</div><div class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</div></div></a>`;
+ return `<button type="button" class="aktanGroupCard" data-aktan-mode-id="${gid}" aria-label="Open ${escMG(g.name)} rooms" onclick="window.aktanSelectGroup('${gid}');return false" onpointerup="window.aktanSelectGroup('${gid}');return false" ontouchend="window.aktanSelectGroup('${gid}');return false">${g.thumbnail?`<img src="${escMG(g.thumbnail)}" alt="" aria-hidden="true">`:''}<span class="aktanGroupContent"><span class="title">${escMG(g.icon||'🎮')} ${escMG(g.name)}</span><span class="desc">${escMG(g.description||'Choose this game mode')}</span><span class="count">${rs.length} match${rs.length===1?'':'es'} available → Tap to view</span></span></button>`;
 }
 function roomCardHTML(r){
  const g=groupById(r.gameGroup||deriveGroup(r)),n=countApproved(r),m=Math.max(1,+r.maxSlots||1),left=Math.max(0,m-n),full=!left;
@@ -4067,13 +4067,11 @@ window.aktanSelectGroup=function(id){
  const next=String(id||'').trim();
  if(next && !ensureMG().some(x=>String(x.id)===next))return false;
  window.__aktanMGSelectedGroup=next;
- try{
-   const hash=next?'#aktan-mode-'+encodeURIComponent(next):'';
-   if(location.hash!==hash) location.hash=hash;
- }catch(e){}
+ try{history.replaceState(null,'',next?'#aktan-mode-'+encodeURIComponent(next):location.pathname+location.search);}catch(e){}
  const box=document.getElementById('pubContestsBox');
  if(!box)return false;
  renderPublicMG();
+ requestAnimationFrame(()=>{const h=box.querySelector('.aktanRoomGroupHeader');if(h)h.scrollIntoView({block:'start',behavior:'instant'});});
  return false;
 };
 
@@ -4090,17 +4088,19 @@ function bindPublicModeClicks(){
  if(box.dataset.aktanModeClickBound==='1')return;
  box.dataset.aktanModeClickBound='1';
  const activate=function(ev){
-   const t=ev.target;
-   const card=t&&t.closest?t.closest('[data-aktan-mode-id]'):null;
+   const card=ev.target&&ev.target.closest?ev.target.closest('[data-aktan-mode-id]'):null;
    if(!card||!box.contains(card))return;
    const id=card.getAttribute('data-aktan-mode-id')||'';
    if(!id)return;
+   ev.preventDefault?.();
+   ev.stopPropagation?.();
    window.aktanSelectGroup(id);
  };
- box.addEventListener('click',activate,false);
- box.addEventListener('touchend',activate,{passive:true});
- box.addEventListener('pointerup',activate,false);
+ box.addEventListener('click',activate,true);
+ box.addEventListener('pointerup',activate,true);
+ box.addEventListener('touchend',activate,{passive:false,capture:true});
 }
+
 function publicOverlay(){
  const app=document.getElementById('publicApp');if(!app)return;
  let top=app.querySelector('#aktanPublicExtras');if(!top){top=document.createElement('div');top.id='aktanPublicExtras';const anchor=app.querySelector('.publicTop');anchor?.insertAdjacentElement('afterend',top);}
