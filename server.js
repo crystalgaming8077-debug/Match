@@ -8,7 +8,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const HTML = path.join(ROOT, 'AKTan_Tournament_PointCalc_AKTAN_V25_PUBLIC_SPECTATOR.html');
 const DATA_FILE = path.join(ROOT, 'public-data.json');
-const VERSION = '26.11.0-registration-push-v8';
+const VERSION = '26.12.0-registration-room-controls-v12';
 let pushWorkerRunning = false;
 
 let pg = null;
@@ -242,10 +242,10 @@ const server=http.createServer(async (req,res)=>{
       const contests=Array.isArray(pub.state.publicContests)?pub.state.publicContests:[];
       const contest=contestId?contests.find(x=>String(x.id)===contestId):null;
       if(contests.length && !contest)return json(res,400,{error:'Please select a valid contest / room'});
-      if(contest){const max=Math.max(1,Math.min(1000,+contest.maxSlots||1));const approved=(pub.state.teams||[]).filter(t=>String(t.contestId||'')===contestId).length;const pending=pub.registrations.filter(r=>String(r.contestId||'')===contestId).length;if(approved+pending>=max)return json(res,409,{error:'This room is full. Please choose another room'});}
+      if(contest){const max=Math.max(1,Math.min(1000,+contest.maxSlots||1));const approved=(pub.state.teams||[]).filter(t=>String(t.contestId||'')===contestId).length;const pending=pub.registrations.filter(r=>String(r.contestId||'')===contestId).length;if(approved+pending>=max)return json(res,409,{error:'This room is full. Please choose another room'});const closeOn=contest.closeRegistration!==false;const before=Math.max(0,Math.min(1440,Number(contest.closeRegistrationBeforeMinutes??5)||5));const start=Date.parse(contest.startAt||'');if(closeOn&&Number.isFinite(start)&&Date.now()>=start-before*60000)return json(res,409,{error:'Registration is closed. This room closes '+before+' minutes before match start.'});if(contest.status==='Completed'||contest.status==='Cancelled'||contest.status==='Live')return json(res,409,{error:'Registration is closed for this room.'});}
       const rawFmt=String(contest?.format||'').trim().toLowerCase().replace(/\s+/g,'');
       const fmt=rawFmt.replace(/[^a-z0-9v\/]/g,'');
-      const team=clean(b.team,40),captain=clean(b.captain,40),phone=clean(b.phone,20),logo=typeof b.logo==='string'&&b.logo.startsWith('data:image/')?b.logo.slice(0,1500000):'',players=Array.isArray(b.players)?b.players.slice(0,5).map(x=>clean(x,40)):[];
+      const team=clean(b.team,40),captain=clean(b.captain,40),phone=clean(b.phone,20),logo=typeof b.logo==='string'&&b.logo.startsWith('data:image/')?b.logo.slice(0,1500000):'',players=Array.isArray(b.players)?b.players.slice(0,5).map(x=>clean(x,40)):[],playerUIDs=Array.isArray(b.playerUIDs)?b.playerUIDs.slice(0,5).map(x=>clean(x,20)):[];
       // Accept exact formats (1v1/2v2/3v3/4v4) and combined labels such as CS Headshot 1v1/2v2.
       const counts=[1,2,3,4].filter(n=>new RegExp('(?:^|\/)'+n+'v'+n+'(?:$|\/)').test(fmt)||fmt===n+'v'+n);
       const fallbackMode=String(b.mode||cfg.mode||'squad').toLowerCase();
@@ -257,11 +257,19 @@ const server=http.createServer(async (req,res)=>{
       const needsTeam=mode!=='solo'; // Team Name is required for DUO/3v3/SQUAD, not SOLO.
       const needsLogo=false;
       const needsPhone=true;
-      if((needsTeam&&!team)||(needsPhone&&!phone)||submittedCount!==need||players.slice(0,need).some(x=>!x))return json(res,400,{error:'Please fill Team Name, all required player names and phone number for this room.'});
+      if((needsTeam&&!team)||(needsPhone&&!phone)||submittedCount!==need||players.slice(0,need).some(x=>!x)||playerUIDs.slice(0,need).some(x=>!x))return json(res,400,{error:'Please fill Team Name, all required player names, all player UIDs and phone number for this room.'});
       const identity=(team||players[0]).toLowerCase();
       const exists=(pub.state.teams||[]).some(t=>String(t.name||'').trim().toLowerCase()===identity)||pub.registrations.some(r=>String(r.team||r.players?.[0]||'').toLowerCase()===identity);
       if(exists)return json(res,409,{error:'This team/player name is already registered or pending'});
-      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,phone,logo,createdAt:Date.now()};pub.registrations.push(r);pub.updatedAt=Date.now();await updatePub(pub);
+      const r={id:makeToken(),contestId,contestTitle:contest?.title||'',mode,team,captain:captain||players[0],players,playerUIDs,phone,logo,createdAt:Date.now()};
+      let autoApproved=false;
+      if(contest?.autoApprove){
+        const matchCount=Math.max(1,Number(pub.state.matches)||6);
+        const t={id:makeToken(),name:r.team||r.players[0]||'Player',logo:r.logo||'',captain:r.captain||r.players[0]||'',players:r.players.slice(0,5),playerUIDs:r.playerUIDs.slice(0,5),phone:r.phone||'',contestId:r.contestId||'',contestTitle:r.contestTitle||'',matches:Array.from({length:matchCount},()=>({kills:[0,0,0,0,0],pos:12}))};
+        while(t.players.length<5)t.players.push('');while(t.playerUIDs.length<5)t.playerUIDs.push('');
+        pub.state.teams=Array.isArray(pub.state.teams)?pub.state.teams:[];pub.state.teams.push(t);autoApproved=true;
+      } else { pub.registrations.push(r); }
+      pub.updatedAt=Date.now();await updatePub(pub);
       // Persist a notification job first, then attempt immediately. The queue worker
       // will retry the job independently if the immediate attempt gets no delivery.
       let push={sent:0,failed:0,subscriptions:0,mode:'queued'};
@@ -275,7 +283,7 @@ const server=http.createServer(async (req,res)=>{
         console.error('Registration push immediate failed:',e?.stack||e?.message||e);
         push={sent:0,failed:0,subscriptions:0,mode:'queued-retry',error:String(e?.message||e)};
       }
-      return json(res,201,{ok:true,id:r.id,push,queueId});
+      return json(res,201,{ok:true,id:r.id,approved:autoApproved,push,queueId});
     }
     m=u.pathname.match(/^\/api\/admin\/([^/]+)\/registrations$/);
     if(m && req.method==='GET'){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});return json(res,200,{registrations:pub.registrations});}

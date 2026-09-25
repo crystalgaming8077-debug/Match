@@ -1437,6 +1437,7 @@ function printPrizePool(){
 </style>
 </head><body onload="setTimeout(function(){window.print()},250)"><div class=sheet><div class=head><img src="${logo}"><h1>${esc(S.name||'AKTan Squad War')}</h1><p>OFFICIAL PRIZE POOL</p><p>${S.date?esc(new Date(S.date).toLocaleDateString()):''}</p></div><div class=total><small>TOTAL PRIZE POOL</small>₹${total}</div><table><thead><tr><th>Type</th><th>Reward</th><th>Recipient</th><th>Prize</th></tr></thead><tbody>${rows}</tbody></table><div class=foot>AKTan Tournament • Official Prize Pool</div><div class=noPrint><button onclick="window.print()">🖨️ Print / Save PDF</button></div></div>
 
+
 </body></html>`);
   w.document.close();
 }
@@ -1486,7 +1487,7 @@ function syncSetupFromInputs(){const n=document.getElementById('tourName'),m=doc
 function save(){syncSetupFromInputs();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} renderAll();applyPrintTheme();alert('Saved successfully.')}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function newTeam(){return{id:uid(),name:'Team '+(S.teams.length+1),logo:'',captain:'',players:['','','','',''],matches:Array.from({length:S.matches},()=>({kills:[0,0,0,0,0],pos:12}))}}
+function newTeam(){return{id:uid(),name:'Team '+(S.teams.length+1),logo:'',captain:'',players:['','','','',''],playerUIDs:['','','','',''],matches:Array.from({length:S.matches},()=>({kills:[0,0,0,0,0],pos:12}))}}
 function syncMatches(t){while(t.matches.length<S.matches)t.matches.push({kills:[0,0,0,0,0],pos:12});if(t.matches.length>S.matches)t.matches=t.matches.slice(0,S.matches);}
 
 function stats(){return S.teams.map(t=>{syncMatches(t);let kills=0,place=0; t.matches.forEach(m=>{kills+=(m.kills||[]).reduce((a,b)=>a+(+b||0),0)*S.killPoint;place+=PLACE[(+m.pos||12)-1]||0});let adj=(S.penalties||[]).filter(p=>p.teamId===t.id).reduce((a,p)=>a+(+p.points||0),0);return{t,kills,place,adjustment:adj,total:kills+place+adj}}).sort((a,b)=>b.total-a.total||b.kills-a.kills)}
@@ -1499,7 +1500,7 @@ function renderTeams(){let box=document.getElementById('teamsList');box.innerHTM
 <div style="flex:1"><label>Team Name</label><input value="${esc(t.name)}" onchange="S.teams[${idx}].name=this.value;renderAll()"><button class="primary" style="margin-top:8px" onclick="openTeamProfile('${t.id}')">👤 View Team Profile</button></div>
 <div><label>Team Logo</label><input type="file" accept="image/*" onchange="logoUpload(event,'${t.id}')"></div></div>
 <div class="grid g2"><div><label>Team Captain</label><input value="${esc(t.captain||'')}" onchange="S.teams[${idx}].captain=this.value"></div>
-${t.players.map((p,i)=>`<div><label>${i<4?'Player '+(i+1):'Optional Player'}</label><input value="${esc(p)}" onchange="S.teams[${idx}].players[${i}]=this.value;renderAll()"></div>`).join('')}
+${t.players.map((p,i)=>`<div><label>${i<4?'Player '+(i+1):'Optional Player'}</label><input value="${esc(p)}" onchange="S.teams[${idx}].players[${i}]=this.value;renderAll()"><label style="margin-top:6px">Player UID</label><input value="${esc((t.playerUIDs||[])[i]||'')}" placeholder="UID" inputmode="numeric" onchange="S.teams[${idx}].playerUIDs[${i}]=this.value;save()"></div>`).join('')}
 </div><br><button class="danger" onclick="removeTeam('${t.id}')">Remove Team</button></div>`).join('')||'<div class="card empty">No teams added yet. Tap Add Team to begin.</div>'}
 function logoUpload(ev,id){let f=ev.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let c=document.createElement('canvas'),x=c.getContext('2d');c.width=128;c.height=128;let s=Math.min(im.width,im.height),sx=(im.width-s)/2,sy=(im.height-s)/2;x.drawImage(im,sx,sy,s,s,0,0,128,128);let t=S.teams.find(a=>a.id===id);t.logo=c.toDataURL('image/jpeg',.82);renderAll()};im.src=r.result};r.readAsDataURL(f)}
 function removeTeam(id){if(!v9Guard())return;if(confirm('Remove this team?')){S.teams=S.teams.filter(t=>t.id!==id);renderAll()}}
@@ -1899,7 +1900,7 @@ function renderV9Dashboard(){v9Ensure();let d=v9Stats();document.getElementById(
 function v9SetSchedule(i,k,v){if(S.publicMode&&window.__aktanRemoteAdminSession!==true)return;v9Ensure();S.schedule[i][k]=v;if(v==='Locked')S.locks=[...(S.locks||[]).filter(x=>x!==i+1),i+1];syncSetupFromInputs();renderAll()}
 function v9Admin(){if(typeof window.__aktanRemoteAdminCheck==='function'){let p=prompt('Enter the same Admin PIN / Password again to unlock editing:');if(p===null)return;if(!window.__aktanRemoteAdminCheck(p)){alert('Wrong Admin PIN / Password.');return}if(typeof window.__aktanRemoteAdminUnlock==='function')window.__aktanRemoteAdminUnlock();window.__aktanRemoteAdminCheck=null;window.__aktanRemoteAdminUnlock=null;window.__aktanRemoteAdminSession=true;S.publicMode=false;document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';renderAll();if(typeof window.loadPendingPublicRegistrations==='function')window.loadPendingPublicRegistrations();toast('🔓 Admin editing enabled');return}if(!S.adminPin){let p=prompt('Set a new Admin PIN (4-12 characters):');if(!p||p.length<4){alert('PIN must be at least 4 characters.');return}S.adminPin=p;S.publicMode=false;syncSetupFromInputs();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}toast('Admin PIN set.');renderAll();return}let p=prompt('Enter Admin PIN to unlock editing:');if(p===null)return;if(p!==S.adminPin){alert('Wrong Admin PIN.');return}S.publicMode=false;document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';renderAll();toast('🔓 Admin editing enabled')}
 function v9Guard(){if(!S.publicMode||window.__aktanRemoteAdminSession===true)return true;alert('Public Mode is ON. Enter the Admin PIN to edit tournament data.');return false}
-function openTeamProfile(id){let t=S.teams.find(x=>x.id===id);if(!t)return;let x=stats().find(z=>z.t.id===id),booyahs=t.matches.filter(m=>m.pos===1).length,best=Math.max(0,...t.matches.map(m=>m.pos||12));let history=t.matches.map((m,i)=>`<tr><td>Match ${i+1}</td><td>#${m.pos}</td><td>${(m.kills||[]).reduce((a,b)=>a+(+b||0),0)}</td></tr>`).join('');document.getElementById('v9Modal').innerHTML=`<div class="modalbox"><button class="right" onclick="closeV9Modal()">✕ Close</button><h2>👤 Team Profile</h2><div class="miniProfile"><img src="${t.logo||brandFallback()}"><div><h2>${esc(t.name)}</h2><div class="muted">Captain: ${esc(t.captain||'—')}</div><div class="muted">Current Rank: #${stats().findIndex(z=>z.t.id===id)+1}</div><div class="muted">Total Kills: ${Math.round((x?.kills||0)/(S.killPoint||1))}</div><div class="muted">Booyahs: ${booyahs}</div><div class="muted">Best Position: #${best}</div></div></div><h3>Players</h3><div class="notice">${t.players.filter(p=>p.trim()).map((p,i)=>`<b>${i<4?'Player':'Sub'} ${i<4?i+1:''}:</b> ${esc(p)}`).join('<br>')||'No players added.'}</div><h3>Match History</h3><div class="tablewrap"><table><thead><tr><th>Match</th><th>Position</th><th>Kills</th></tr></thead><tbody>${history||'<tr><td colspan="3">No matches</td></tr>'}</tbody></table></div></div>`;document.getElementById('v9Modal').classList.remove('hidden')}
+function openTeamProfile(id){let t=S.teams.find(x=>x.id===id);if(t&&!Array.isArray(t.playerUIDs))t.playerUIDs=[];if(!t)return;let x=stats().find(z=>z.t.id===id),booyahs=t.matches.filter(m=>m.pos===1).length,best=Math.max(0,...t.matches.map(m=>m.pos||12));let history=t.matches.map((m,i)=>`<tr><td>Match ${i+1}</td><td>#${m.pos}</td><td>${(m.kills||[]).reduce((a,b)=>a+(+b||0),0)}</td></tr>`).join('');document.getElementById('v9Modal').innerHTML=`<div class="modalbox"><button class="right" onclick="closeV9Modal()">✕ Close</button><h2>👤 Team Profile</h2><div class="miniProfile"><img src="${t.logo||brandFallback()}"><div><h2>${esc(t.name)}</h2><div class="muted">Captain: ${esc(t.captain||'—')}</div><div class="muted">Current Rank: #${stats().findIndex(z=>z.t.id===id)+1}</div><div class="muted">Total Kills: ${Math.round((x?.kills||0)/(S.killPoint||1))}</div><div class="muted">Booyahs: ${booyahs}</div><div class="muted">Best Position: #${best}</div></div></div><h3>Players</h3><div class="notice">${t.players.filter(p=>p.trim()).map((p,i)=>`<b>${i<4?'Player':'Sub'} ${i<4?i+1:''}:</b> ${esc(p)}${t.playerUIDs?.[i]?` • UID: ${esc(t.playerUIDs[i])}`:''}`).join('<br>')||'No players added.'}</div><h3>Match History</h3><div class="tablewrap"><table><thead><tr><th>Match</th><th>Position</th><th>Kills</th></tr></thead><tbody>${history||'<tr><td colspan="3">No matches</td></tr>'}</tbody></table></div></div>`;document.getElementById('v9Modal').classList.remove('hidden')}
 function closeV9Modal(){document.getElementById('v9Modal').classList.add('hidden')}
 function v9Awards(){let ps=playerStats();let top=ps[0];let all=[];S.teams.forEach(t=>t.matches.forEach((m,i)=>all.push({player:t.players.reduce((best,p,idx)=>{let k=+(m.kills?.[idx]||0);return (!best||k>best.k)?{p,k}:best},null)?.p||'',k:Math.max(0,...(m.kills||[])),team:t.name,match:i+1})));let bestMatch=all.sort((a,b)=>b.k-a.k)[0];let consistent=ps.map(p=>{let t=S.teams.find(z=>z.name===p.team);let vals=t?t.matches.map(m=>+(m.kills[t.players.indexOf(p.player)]||0)):[];let avg=vals.length?p.kills/vals.length:0;return {...p,avg}}).sort((a,b)=>b.avg-a.avg)[0];return{mvp:top,highestKill:top,bestMatch,consistent}}
 function v9PosterData(kind){let st=stats(),a=v9Awards();if(kind==='champion')return{award:'🏆',title:'CHAMPIONS',name:st[0]?.t.name||'—',team:st[0]?.t,k:st[0]?.kills||0,pts:st[0]?.total||0};if(kind==='runner')return{award:'🥈',title:'RUNNER-UP',name:st[1]?.t.name||'—',team:st[1]?.t,k:st[1]?.kills||0,pts:st[1]?.total||0};if(kind==='third')return{award:'🥉',title:'3RD PLACE',name:st[2]?.t.name||'—',team:st[2]?.t,k:st[2]?.kills||0,pts:st[2]?.total||0};if(kind==='podium')return{podium:true};let x=a[kind];return{award:kind==='mvp'?'👑':kind==='highestKill'?'💀':kind==='bestMatch'?'🔥':'🎯',title:kind==='mvp'?'MVP':kind==='highestKill'?'HIGHEST KILL':kind==='bestMatch'?'BEST SINGLE MATCH':'MOST CONSISTENT',name:x?.player||x?.p||'—',team:x?.team||'—',k:x?.kills??x?.k??0,pts:''}}
@@ -2677,9 +2678,9 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
       const ps=result?.push||{}; document.getElementById('pubRegStatus').textContent='✓ Registration submitted. Waiting for organizer approval.'+(typeof ps.sent==='number'?` • Notification: ${ps.sent} sent / ${ps.subscriptions||0} device(s)`: '');
     }catch(e){document.getElementById('pubRegStatus').textContent='⚠ '+e.message}
   };
-  async function loadPendingPublicRegistrations(){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations',{headers:{'X-Admin-Key':publicAdminKey}});const count=d.registrations.length;if(lastPendingPublicCount!==null&&count>lastPendingPublicCount){const diff=count-lastPendingPublicCount;toast('🔔 New registration'+(diff>1?'s':'')+' received • '+diff+' pending');}lastPendingPublicCount=count;const box=document.getElementById('publicPendingBox');if(!box)return;box.innerHTML='<b>Pending registrations: '+count+'</b>'+(count?d.registrations.map(r=>`<div class="notice" style="margin-top:8px"><b>${esc(r.team)}</b> • Captain: ${esc(r.captain)}<div class="small muted">${esc((r.mode||'squad').toUpperCase())} • ${esc(r.phone||'No phone')} • ${r.players.map(esc).join(' • ')}</div>${r.logo?'<img src="'+r.logo+'" style="width:48px;height:48px;object-fit:contain;margin-top:6px;border-radius:8px">':''}<button class="primary" style="margin-top:7px" onclick="approvePublicRegistration('${r.id}')">✅ Approve & Add Team</button></div>`).join(''):'<div class="small muted" style="margin-top:6px">No pending registrations.</div>');}catch(e){}}
+  async function loadPendingPublicRegistrations(){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations',{headers:{'X-Admin-Key':publicAdminKey}});const count=d.registrations.length;if(lastPendingPublicCount!==null&&count>lastPendingPublicCount){const diff=count-lastPendingPublicCount;toast('🔔 New registration'+(diff>1?'s':'')+' received • '+diff+' pending');}lastPendingPublicCount=count;const box=document.getElementById('publicPendingBox');if(!box)return;box.innerHTML='<b>Pending registrations: '+count+'</b>'+(count?d.registrations.map(r=>`<div class="notice" style="margin-top:8px"><b>${esc(r.team)}</b> • Captain: ${esc(r.captain)}<div class="small muted">${esc((r.mode||'squad').toUpperCase())} • ${esc(r.phone||'No phone')} • ${r.players.map((p,i)=>esc(p)+(r.playerUIDs?.[i]?' • UID: '+esc(r.playerUIDs[i]):'')).join(' • ')}</div>${r.logo?'<img src="'+r.logo+'" style="width:48px;height:48px;object-fit:contain;margin-top:6px;border-radius:8px">':''}<button class="primary" style="margin-top:7px" onclick="approvePublicRegistration('${r.id}')">✅ Approve & Add Team</button></div>`).join(''):'<div class="small muted" style="margin-top:6px">No pending registrations.</div>');}catch(e){}}
   window.loadPendingPublicRegistrations=loadPendingPublicRegistrations;
-  window.approvePublicRegistration=async function(id){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'X-Admin-Key':publicAdminKey}});const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Solo Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();await publishPublicShare();}await loadPendingPublicRegistrations();}catch(e){alert('Approval failed: '+e.message)}};
+  window.approvePublicRegistration=async function(id){if(!publicToken||!publicAdminKey)return;try{const d=await publicApi('/api/admin/'+encodeURIComponent(publicToken)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'X-Admin-Key':publicAdminKey}});const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Solo Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');t.playerUIDs=(r.playerUIDs||[]).slice(0,5);while(t.playerUIDs.length<5)t.playerUIDs.push('');if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();await publishPublicShare();}await loadPendingPublicRegistrations();}catch(e){alert('Approval failed: '+e.message)}};
   async function bootRemotePublic(){const token=new URLSearchParams(location.search).get('publicToken');if(!token)return;try{document.body.classList.add('publicModeBody');const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/state');if(!d.state)throw new Error('Public tournament not found');S=Object.assign(S,d.state,{publicMode:true});if(typeof applySpectatorTheme==='function')applySpectatorTheme();ensurePrize();renderAll();document.getElementById('publicApp').style.display='block';if(typeof applySpectatorTheme==='function')applySpectatorTheme();renderPublicApp();publicRegModeChanged();publicSection('pubHome');}catch(e){const app=document.getElementById('publicApp');if(app){app.style.display='block';app.innerHTML='<div class="publicHero"><h1>Public link unavailable</h1><div>'+esc(e.message)+'</div></div>'}}}
   window.publicAdminLogin=async function(){const token=new URLSearchParams(location.search).get('publicToken');if(!token){alert('Open the public tournament link first.');return}const old=document.getElementById('aktanAdminLoginBox');if(old)old.remove();const box=document.createElement('div');box.id='aktanAdminLoginBox';box.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:20px';box.innerHTML='<div style="width:min(420px,100%);background:#111827;border:1px solid #6b7280;border-radius:18px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);color:#fff"><h2 style="margin:0 0 8px">🔐 Admin Login</h2><div style="font-size:13px;opacity:.8;margin-bottom:14px">Enter your Admin PIN / Password to unlock the main app.</div><input id="aktanAdminLoginPass" type="password" autocomplete="current-password" placeholder="Admin PIN / Password" style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #4b5563;background:#0b1220;color:#fff"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="aktanAdminLoginBtn" class="primary" type="button">🔓 Login</button><button id="aktanAdminCancelBtn" type="button">Cancel</button></div><div id="aktanAdminLoginMsg" style="margin-top:10px;font-size:13px;min-height:18px"></div></div>';document.body.appendChild(box);const inp=document.getElementById('aktanAdminLoginPass'),msg=document.getElementById('aktanAdminLoginMsg');const close=()=>box.remove();document.getElementById('aktanAdminCancelBtn').onclick=close;document.getElementById('aktanAdminLoginBtn').onclick=async()=>{const password=inp.value;if(!password){msg.textContent='Please enter the Admin Password / PIN.';return}const btn=document.getElementById('aktanAdminLoginBtn');btn.disabled=true;msg.textContent='Checking…';try{const d=await publicApi('/api/public/'+encodeURIComponent(token)+'/admin-login',{method:'POST',body:JSON.stringify({password})});publicToken=token;publicAdminKey=d.adminKey;remoteAdminSession=false;remoteAdminPending=true;remoteAdminPassword=password;window.__aktanRemoteAdminCheck=(candidate)=>remoteAdminPending&&candidate===remoteAdminPassword;window.__aktanRemoteAdminUnlock=()=>{remoteAdminPending=false;remoteAdminSession=true;window.__aktanRemoteAdminSession=true;S.publicMode=false;S.adminPin=remoteAdminPassword;remoteAdminPassword='';document.body.classList.remove('publicModeBody');const pubCard=document.getElementById('publicRoomsCard');if(pubCard)pubCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const ctl=document.getElementById('publicControlCard');if(ctl)ctl.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const promoCard=document.getElementById('publicPromoCard');if(promoCard)promoCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);const pinCard=document.getElementById('changePinCard');if(pinCard)pinCard.querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);};localStorage.setItem(PUB_TOKEN_KEY,publicToken);localStorage.setItem(PUB_ADMIN_KEY,publicAdminKey);S=Object.assign(S,d.state,{publicMode:true});document.body.classList.remove('publicModeBody');const app=document.getElementById('publicApp');if(app)app.style.display='none';close();renderAll();syncPublicAdminRegistrationUI();toast('🔐 Password verified. Now open Admin Mode and enter the same password again.');}catch(e){msg.textContent='❌ '+e.message;if(/incorrect|invalid admin password/i.test(e.message)){msg.textContent+='  Check your Admin PIN and try again.';}btn.disabled=false;}};inp.focus();inp.onkeydown=e=>{if(e.key==='Enter')document.getElementById('aktanAdminLoginBtn').click();}};
 
@@ -2799,8 +2800,8 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
 
   function ensureSlotCount(){
     let arr=loadSlots();
-    if(!arr.length) arr=Array.from({length:16},()=> '');
-    const needed=Math.max(16,Array.isArray(S.teams)?S.teams.length:0);
+    if(!arr.length) arr=Array.from({length:Math.max(1,Array.isArray(S.teams)?S.teams.length:1)},()=> '');
+    const needed=Math.max(1,Array.isArray(S.teams)?S.teams.length:0);
     while(arr.length<needed) arr.push('');
     if(Array.isArray(S.teams)) S.teams.forEach((t,i)=>{
       if(t&&t.name&&(!arr[i]||String(arr[i]).startsWith('Team '))) arr[i]=t.name;
@@ -2890,7 +2891,7 @@ load();ensurePrize();S.aktanLogo=S.aktanLogo||'';limitOrganizerNoteWords(documen
 
   window.addSlot=function(){
     let arr=loadSlots();
-    if(!arr.length) arr=Array.from({length:16},()=> '');
+    if(!arr.length) arr=Array.from({length:Math.max(1,Array.isArray(S.teams)?S.teams.length:1)},()=> '');
     arr.push('');
     localStorage.setItem(KEY,JSON.stringify(arr));
     renderSlots();
@@ -3408,7 +3409,7 @@ window.previewOCRImages=function(e){
   window.__aktanRoomLogoData='';
   document.addEventListener('change',function(e){if(e.target?.id!=='pubRegLogo')return;const f=e.target.files?.[0];window.__aktanRoomLogoData='';if(!f||!f.type.startsWith('image/'))return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const max=420,sc=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*sc));c.height=Math.max(1,Math.round(im.height*sc));c.getContext('2d').drawImage(im,0,0,c.width,c.height);window.__aktanRoomLogoData=c.toDataURL('image/jpeg',.82)};im.src=rd.result};rd.readAsDataURL(f)},true);
   window.submitPublicRegistration=async function(){const token=new URLSearchParams(location.search).get('publicToken'),id=document.getElementById('pubRegContest')?.value||'',r=room(id),st=document.getElementById('pubRegStatus');if(!token){st.textContent='Registration link is not active.';return}if(!r){st.textContent='⚠ Please select a contest / room.';return}const n=countApproved(r),m=Math.max(1,+r.maxSlots||1);if(n>=m){st.textContent='⚠ This room is full. Please choose another room.';return}const fi=formatInfo(r.format),mode=fi.mode,team=document.getElementById('pubRegTeam')?.value.trim()||'',phone=document.getElementById('pubRegPhone')?.value.trim()||'',captain=document.getElementById('pubRegCaptain')?.value.trim()||'',players=['P1','P2','P3','P4','P5'].map(k=>document.getElementById('pubReg'+k)?.value.trim()||''),need=fi.need;if(fi.team&&!team){st.textContent='⚠ Please enter team name.';return}if(phone===''){st.textContent='⚠ Please enter phone number.';return}if(players.slice(0,need).some(x=>!x)){st.textContent='⚠ Please fill all required players.';return}const logo=window.__aktanRoomLogoData||'';try{const response=await fetch((location.origin||'')+'/api/public/'+encodeURIComponent(token)+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contestId:id,mode,team,captain:captain||players[0],players:players.slice(0,need),phone,logo})});const d=await response.json();if(!response.ok)throw new Error(d.error||('HTTP '+response.status));['Team','Captain','P1','P2','P3','P4','P5','Phone'].forEach(k=>{const e=document.getElementById('pubReg'+k);if(e)e.value=''});const file=document.getElementById('pubRegLogo');if(file)file.value='';window.__aktanRoomLogoData='';const ps=d?.push||{};st.textContent='✓ Registration submitted for '+r.title+'. Waiting for organizer approval.'+(typeof ps.sent==='number'?(' • Notification: '+ps.sent+' sent / '+(ps.subscriptions||0)+' device(s)'):'' );populateRoomSelect();renderPublicRooms()}catch(e){st.textContent='⚠ '+e.message; if(/does not match/i.test(e.message)) st.textContent+=' • Room format validation updated — refresh the public link and try again.'}};
-  window.approvePublicRegistration=async function(id){const token=localStorage.getItem('AKTan_Public_Token_v1')||'',key=localStorage.getItem('AKTan_Public_AdminKey_v1')||'',st=document.getElementById('publicPendingBox');if(!token||!key)return;try{const rr=await fetch((location.origin||'')+'/api/admin/'+encodeURIComponent(token)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'Content-Type':'application/json','X-Admin-Key':key}});const d=await rr.json();if(!rr.ok)throw new Error(d.error||('HTTP '+rr.status));const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');t.contestId=r.contestId||'';t.contestTitle=r.contestTitle||'';if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();if(typeof publishPublicShare==='function')await publishPublicShare()}if(typeof window.loadPendingPublicRegistrations==='function')await window.loadPendingPublicRegistrations();toast('Registration approved')}catch(e){alert('Approval failed: '+e.message)}};
+  window.approvePublicRegistration=async function(id){const token=localStorage.getItem('AKTan_Public_Token_v1')||'',key=localStorage.getItem('AKTan_Public_AdminKey_v1')||'',st=document.getElementById('publicPendingBox');if(!token||!key)return;try{const rr=await fetch((location.origin||'')+'/api/admin/'+encodeURIComponent(token)+'/registrations/'+encodeURIComponent(id),{method:'DELETE',headers:{'Content-Type':'application/json','X-Admin-Key':key}});const d=await rr.json();if(!rr.ok)throw new Error(d.error||('HTTP '+rr.status));const r=d.registration;if(r){const t=newTeam();t.name=r.team||r.players?.[0]||'Player';t.captain=r.captain||r.players?.[0]||'';t.players=(r.players||[]).slice(0,5);while(t.players.length<5)t.players.push('');t.playerUIDs=(r.playerUIDs||[]).slice(0,5);while(t.playerUIDs.length<5)t.playerUIDs.push('');t.contestId=r.contestId||'';t.contestTitle=r.contestTitle||'';if(r.logo)t.logo=r.logo;S.teams.push(t);syncSetupFromInputs();renderAll();if(typeof publishPublicShare==='function')await publishPublicShare()}if(typeof window.loadPendingPublicRegistrations==='function')await window.loadPendingPublicRegistrations();toast('Registration approved')}catch(e){alert('Approval failed: '+e.message)}};
   window.changeAdminPin=function(){if(S.publicMode){alert('Unlock Admin Mode first.');return}const oldP=document.getElementById('oldAdminPin')?.value||'',newP=document.getElementById('newAdminPin')?.value||'',conf=document.getElementById('confirmAdminPin')?.value||'',st=document.getElementById('changePinStatus');if(S.adminPin&&oldP!==S.adminPin){st.textContent='❌ Current PIN is incorrect.';return}if(newP.length<4||newP.length>30){st.textContent='❌ New PIN must be 4–30 characters.';return}if(newP!==conf){st.textContent='❌ New PIN and confirmation do not match.';return}S.adminPin=newP;S.publicMode=false;syncSetupFromInputs();['oldAdminPin','newAdminPin','confirmAdminPin'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});st.textContent='✅ Admin PIN changed successfully.';toast('Admin PIN changed')};
   window.renderAll=function(){if(typeof baseRenderAll==='function')baseRenderAll();renderAdminRooms();populateRoomSelect();renderPublicRooms()};
   window.renderPublicApp=function(){if(typeof baseRenderPublicApp==='function')baseRenderPublicApp();populateRoomSelect();renderPublicRooms()};
@@ -3802,7 +3803,7 @@ window.previewOCRImages=function(e){
   function renderTeams(){
     const box=document.getElementById('pubTeamsBox');if(!box)return;
     const ts=selectedTeams();
-    box.innerHTML=ts.length?ts.map(t=>`<div class="publicCard publicClick" onclick="openPublicTeamProfile('${escv(t.id)}')"><div class="publicTeam"><img src="${t.logo||brandFallback()}"><div style="min-width:0"><b>${escv(t.name)}</b><div class="muted small">Captain: ${escv(t.captain||'—')}</div><div class="publicTeamPlayers">${(t.players||[]).filter(Boolean).map(p=>`<span>${escv(p)}</span>`).join('')}</div></div></div></div>`).join(''):'<div class="publicEmpty">No teams are registered in the selected room yet.</div>';
+    box.innerHTML=ts.length?ts.map(t=>`<div class="publicCard publicClick" onclick="openPublicTeamProfile('${escv(t.id)}')"><div class="publicTeam"><img src="${t.logo||brandFallback()}"><div style="min-width:0"><b>${escv(t.name)}</b><div class="muted small">Captain: ${escv(t.captain||'—')}</div><div class="publicTeamPlayers">${(t.players||[]).map((p,i)=>p?`<span>${escv(p)}${(t.playerUIDs||[])[i]?` • UID: ${escv(t.playerUIDs[i])}`:''}</span>`:'').filter(Boolean).join('')}</div></div></div></div>`).join(''):'<div class="publicEmpty">No teams are registered in the selected room yet.</div>';
     roomBar('pubTeamsPage','v28TeamsRoom');
   }
 
@@ -3971,6 +3972,167 @@ window.previewOCRImages=function(e){
 })();
 </script>
 
+<script id="AKTanRoomSchedulerAndEditFixV11">
+(function(){
+  const $=id=>document.getElementById(id);
+  function injectAutoFields(){
+    const card=$('publicRoomsCard'); if(!card||$('aktanRoomAutoAdvance'))return;
+    const grid=$('roomCategory')?.closest('.grid'); if(!grid)return;
+    grid.insertAdjacentHTML('beforeend',`<div><label><input id="aktanRoomAutoAdvance" type="checkbox"> Auto Advance Date / Time</label><div class="small muted" style="margin-top:5px">When the time passes, this room moves to the next slot automatically.</div></div><div><label>Advance Every (minutes)</label><input id="aktanRoomAdvanceMinutes" type="number" min="1" max="1440" step="1" value="30"><div class="small muted" style="margin-top:5px">Example: 30 = 8:00 → 8:30 → 9:00 → …</div></div>`);
+  }
+  function setExtras(r){
+    injectAutoFields();
+    const n=$('aktanRoomNumber'),m=$('aktanRoomMatches'),o=$('aktanRoomOrder'),a=$('aktanRoomAutoAdvance'),i=$('aktanRoomAdvanceMinutes');
+    if(n)n.value=r?.roomNumber||'';
+    if(m)m.value=(r?.roomMatches!=null&&r.roomMatches!=='')?r.roomMatches:1;
+    if(o)o.value=(Number(r?.displayOrder)>0?r.displayOrder:'');
+    if(a)a.checked=!!r?.autoAdvance;
+    if(i)i.value=(Number(r?.advanceMinutes)>0?Math.min(1440,Number(r.advanceMinutes)):30);
+  }
+  function resetExtras(){injectAutoFields();const n=$('aktanRoomNumber'),m=$('aktanRoomMatches'),o=$('aktanRoomOrder'),a=$('aktanRoomAutoAdvance'),i=$('aktanRoomAdvanceMinutes');if(n)n.value='';if(m)m.value=1;if(o)o.value='';if(a)a.checked=false;if(i)i.value=30}
+  const oldEdit=window.editPublicRoom;
+  window.editPublicRoom=function(id){if(typeof oldEdit==='function')oldEdit(id);const r=typeof room==='function'?room(id):null;if(r)setExtras(r)};
+  const oldClear=window.clearPublicRoomForm;
+  window.clearPublicRoomForm=function(){if(typeof oldClear==='function')oldClear();resetExtras()};
+  const oldSave=window.savePublicRoom;
+  window.savePublicRoom=function(){
+    injectAutoFields();
+    const b=document.querySelector('#publicRoomsCard button[onclick^="savePublicRoom"]');
+    const edit=b?.dataset.editId||'';
+    const beforeIds=new Set((Array.isArray(window.S?.publicContests)?window.S.publicContests:[]).map(x=>String(x.id)));
+    const titleBefore=$('roomTitle')?.value.trim()||'';
+    const extras={roomNumber:$('aktanRoomNumber')?.value.trim()||'',roomMatches:Math.max(1,Math.min(1000,+$('aktanRoomMatches')?.value||1)),displayOrder:Math.max(1,parseInt($('aktanRoomOrder')?.value||'999999',10)||999999),autoAdvance:!!$('aktanRoomAutoAdvance')?.checked,advanceMinutes:Math.max(1,Math.min(1440,+$('aktanRoomAdvanceMinutes')?.value||30))};
+    if(typeof oldSave==='function')oldSave.apply(this,arguments);
+    let r=edit&&typeof room==='function'?room(edit):null;
+    if(!r&&Array.isArray(window.S?.publicContests)){r=window.S.publicContests.find(x=>!beforeIds.has(String(x.id)))||window.S.publicContests.slice().reverse().find(x=>String(x.title||'')===titleBefore)||window.S.publicContests[window.S.publicContests.length-1];}
+    if(r){Object.assign(r,extras);if(typeof syncSetupFromInputs==='function')syncSetupFromInputs();if(typeof renderAdminRooms==='function')renderAdminRooms();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1'))setTimeout(()=>publishPublicShare(),120);}
+  };
+  function localDateTime(ms){const d=new Date(ms),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
+  function advanceRooms(){
+    if(typeof ensureRooms!=='function')return;
+    const rs=ensureRooms(),now=Date.now();let changed=false;
+    rs.forEach(r=>{if(!r||!r.autoAdvance||r.status==='Completed'||r.status==='Cancelled')return;const mins=Math.max(1,Math.min(1440,Number(r.advanceMinutes)||30)),step=mins*60000;let t=Date.parse(r.startAt||'');if(!Number.isFinite(t))return;if(now<t+step)return;const before=t;while(now>=t+step)t+=step;if(t!==before){r.startAt=localDateTime(t);changed=true;}});
+    if(changed){if(typeof syncSetupFromInputs==='function')syncSetupFromInputs();if(typeof renderAdminRooms==='function')renderAdminRooms();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof renderPublicApp==='function')renderPublicApp();if(window.__aktanRemoteAdminSession&&typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')){clearTimeout(window.__aktanRoomAdvanceSyncTimer);window.__aktanRoomAdvanceSyncTimer=setTimeout(()=>publishPublicShare(),120);}}
+  }
+  function boot(){injectAutoFields();advanceRooms()}
+  setTimeout(boot,100);setTimeout(boot,700);setInterval(advanceRooms,10000);
+})();
+</script>
+<script id="AKTanRegistrationAndSlotFinalFixV12">
+(function(){
+  const $=id=>document.getElementById(id);
+  const escV12=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function rooms(){return typeof S!=='undefined'&&Array.isArray(S.publicContests)?S.publicContests:[]}
+  function roomV12(id){return rooms().find(r=>String(r.id)===String(id))}
+  function normalizeRooms(){rooms().forEach(r=>{if(!r)return;if(r.closeRegistration===undefined)r.closeRegistration=true;if(r.closeRegistrationBeforeMinutes===undefined)r.closeRegistrationBeforeMinutes=5;if(r.autoApprove===undefined)r.autoApprove=false;if(r.autoAdvance===undefined)r.autoAdvance=false;if(!r.advanceMinutes)r.advanceMinutes=30;});}
+  function closeBefore(r){return r?.closeRegistration===false?0:Math.max(0,Math.min(1440,Number(r?.closeRegistrationBeforeMinutes??5)||5))}
+  function registrationClosed(r){if(!r)return true;if(r.status==='Completed'||r.status==='Cancelled'||r.status==='Live')return true;if(r.closeRegistration===false)return false;const t=Date.parse(r.startAt||'');return Number.isFinite(t)&&Date.now()>=t-closeBefore(r)*60000}
+  function registrationLabel(r){if(!r)return 'Registration Closed';if(r.status==='Cancelled')return 'Registration Cancelled';if(r.status==='Completed')return 'Registration Closed';if(r.status==='Live')return 'Match Live — Registration Closed';const t=Date.parse(r.startAt||'');if(Number.isFinite(t)&&Date.now()>=t-closeBefore(r)*60000)return '🔒 Registration Closed';return '📝 Register in this Room'}
+  window.__aktanRegistrationClosedV12=registrationClosed;
+  window.__aktanNormalizeRoomsV12=normalizeRooms;
+
+  // Add room controls: close registration before match + auto approval.
+  function injectRoomControls(){
+    const card=$('publicRoomsCard'), grid=$('roomCategory')?.closest('.grid');
+    if(!card||!grid||$('aktanCloseRegistration'))return;
+    grid.insertAdjacentHTML('beforeend',`<div><label><input id="aktanCloseRegistration" type="checkbox" checked> Close Registration Before Match</label><div class="small muted" style="margin-top:5px">Registration automatically closes before the match starts.</div></div><div><label>Close Before Match (minutes)</label><input id="aktanCloseRegistrationMinutes" type="number" min="0" max="1440" step="1" value="5"><div class="small muted" style="margin-top:5px">Default: 5 minutes before start.</div></div><div><label><input id="aktanAutoApprove" type="checkbox"> Auto Approval</label><div class="small muted" style="margin-top:5px">Approved registrations are added directly to Teams.</div></div>`);
+  }
+  function setRoomControls(r){
+    injectRoomControls();
+    if($('aktanCloseRegistration'))$('aktanCloseRegistration').checked=r?.closeRegistration!==false;
+    if($('aktanCloseRegistrationMinutes'))$('aktanCloseRegistrationMinutes').value=Math.max(0,Math.min(1440,Number(r?.closeRegistrationBeforeMinutes??5)||5));
+    if($('aktanAutoApprove'))$('aktanAutoApprove').checked=!!r?.autoApprove;
+  }
+  function resetRoomControls(){setRoomControls({closeRegistration:true,closeRegistrationBeforeMinutes:5,autoApprove:false});}
+  const prevEdit=window.editPublicRoom;
+  window.editPublicRoom=function(id){if(typeof prevEdit==='function')prevEdit(id);const r=roomV12(id);if(r)setRoomControls(r)};
+  const prevClear=window.clearPublicRoomForm;
+  window.clearPublicRoomForm=function(){if(typeof prevClear==='function')prevClear();resetRoomControls()};
+  const prevFill=window.fillForm;
+  window.fillForm=function(r){if(typeof prevFill==='function')prevFill(r);setRoomControls(r)};
+  const prevSave=window.savePublicRoom;
+  window.savePublicRoom=function(){
+    injectRoomControls();
+    const b=$('publicRoomsCard')?.querySelector('button[onclick^="savePublicRoom"]'),edit=b?.dataset.editId||'';
+    const before=new Set(rooms().map(r=>String(r.id)));
+    if(typeof prevSave==='function')prevSave.apply(this,arguments);
+    let r=edit?roomV12(edit):rooms().find(x=>!before.has(String(x.id)))||rooms()[rooms().length-1];
+    if(r){r.closeRegistration=$('aktanCloseRegistration')?.checked!==false;r.closeRegistrationBeforeMinutes=Math.max(0,Math.min(1440,Number($('aktanCloseRegistrationMinutes')?.value||5)));r.autoApprove=!!$('aktanAutoApprove')?.checked;normalizeRooms();if(typeof syncSetupFromInputs==='function')syncSetupFromInputs();if(typeof renderAdminRooms==='function')renderAdminRooms();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof renderPublicApp==='function')renderPublicApp();if(typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1'))setTimeout(()=>publishPublicShare(),150)}
+  };
+
+  // UID fields for every player.
+  function injectUIDFields(){
+    for(let i=1;i<=5;i++){
+      const name=$('pubRegP'+i);if(!name||$('pubRegUID'+i))continue;
+      const wrap=name.parentElement;if(!wrap)continue;
+      const holder=document.createElement('div');holder.style.marginTop='7px';holder.innerHTML='<label>Player '+i+' UID *</label><input id="pubRegUID'+i+'" maxlength="20" inputmode="numeric" placeholder="Enter Player '+i+' UID">';wrap.appendChild(holder);
+    }
+  }
+  function clearUIDs(){for(let i=1;i<=5;i++){const e=$('pubRegUID'+i);if(e)e.value='';}}
+  function playerUIDs(need){const out=[];for(let i=1;i<=need;i++)out.push(($('pubRegUID'+i)?.value||'').trim());return out}
+
+  // Final registration submit: includes UIDs and enforces the 5-minute close on the client too.
+  window.submitPublicRegistration=async function(){
+    injectUIDFields();normalizeRooms();
+    const token=new URLSearchParams(location.search).get('publicToken'),id=$('pubRegContest')?.value||'',r=roomV12(id),st=$('pubRegStatus');
+    if(!token){if(st)st.textContent='Registration link is not active.';return}
+    if(!r){if(st)st.textContent='⚠ Please select a contest / room.';return}
+    if(registrationClosed(r)){if(st)st.textContent='🔒 Registration is closed for this room. Registration closes '+closeBefore(r)+' minutes before match start.';return}
+    const raw=String(r.format||'').toLowerCase().replace(/\s+/g,'');const mm=raw.match(/([1-4])v\1/);const need=mm?Number(mm[1]):raw==='solo'?1:raw==='duo'?2:4;const mode=need===1?'solo':need===2?'duo':'squad';
+    const team=$('pubRegTeam')?.value.trim()||'',phone=$('pubRegPhone')?.value.trim()||'',captain=$('pubRegCaptain')?.value.trim()||'';
+    const players=[];for(let i=1;i<=need;i++)players.push($('pubRegP'+i)?.value.trim()||'');const uids=playerUIDs(need);
+    if(mode!=='solo'&&!team){if(st)st.textContent='⚠ Please enter team name.';return}
+    if(!phone){if(st)st.textContent='⚠ Please enter phone number.';return}
+    if(players.some(x=>!x)){if(st)st.textContent='⚠ Please fill all required player names.';return}
+    if(uids.some(x=>!x)){if(st)st.textContent='⚠ Please fill UID for every player.';return}
+    const logo=window.__aktanRoomLogoData||'';
+    try{
+      const res=await fetch((location.origin||'')+'/api/public/'+encodeURIComponent(token)+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contestId:id,mode,team:mode==='solo'?'':team,captain:captain||players[0],players,playerUIDs:uids,phone,logo})});
+      const d=await res.json();if(!res.ok)throw new Error(d.error||('HTTP '+res.status));
+      ['pubRegTeam','pubRegCaptain','pubRegPhone','pubRegP1','pubRegP2','pubRegP3','pubRegP4','pubRegP5'].forEach(k=>{const e=$(k);if(e)e.value=''});clearUIDs();const f=$('pubRegLogo');if(f)f.value='';window.__aktanRoomLogoData='';
+      if(st)st.textContent=d.approved?'✅ Registration approved automatically for '+r.title+'.':'✓ Registration submitted for '+r.title+'. Waiting for organizer approval.';
+      if(typeof populateRoomSelect==='function')populateRoomSelect();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof renderPublicApp==='function')renderPublicApp();
+    }catch(e){if(st)st.textContent='⚠ '+e.message}
+  };
+
+  // Registration selector: hide/disable rooms that are already closed.
+  const oldPopulate=window.populateRoomSelect;
+  window.populateRoomSelect=function(){if(typeof oldPopulate==='function')oldPopulate();injectUIDFields();const sel=$('pubRegContest');if(!sel)return;Array.from(sel.options).forEach(o=>{const r=roomV12(o.value);if(!r)return;const closed=registrationClosed(r);o.disabled=closed||o.disabled&&o.textContent.includes('FULL');if(closed)o.textContent=(r.title||'Room')+' — 🔒 REGISTRATION CLOSED';});const r=roomV12(sel.value);if(r&&registrationClosed(r)){sel.value='';if($('pubRegContestInfo'))$('pubRegContestInfo').textContent='Select another room. This room is closed for registration.';}}
+  const oldSelected=window.publicRoomSelected;
+  window.publicRoomSelected=function(){if(typeof oldSelected==='function')oldSelected.apply(this,arguments);injectUIDFields();const r=roomV12($('pubRegContest')?.value||'');if(r&&registrationClosed(r)&&$('pubRegStatus'))$('pubRegStatus').textContent='🔒 Registration closed for this room.';};
+
+  function refreshRegisterButtons(){
+    document.querySelectorAll('[onclick*="registerForPublicRoom"]').forEach(btn=>{
+      const m=String(btn.getAttribute('onclick')||'').match(/registerForPublicRoom\(['"]([^'"]+)/);if(!m)return;const r=roomV12(m[1]);if(!r)return;const closed=registrationClosed(r);if(closed){btn.disabled=true;btn.textContent='🔒 Registration Closed';btn.title='Registration closes '+closeBefore(r)+' minutes before match start';}});
+  }
+  const oldRenderApp=window.renderPublicApp;window.renderPublicApp=function(){if(typeof oldRenderApp==='function')oldRenderApp.apply(this,arguments);setTimeout(()=>{normalizeRooms();injectUIDFields();refreshRegisterButtons()},0)};
+  const oldRenderRooms=window.renderPublicRooms;window.renderPublicRooms=function(){if(typeof oldRenderRooms==='function')oldRenderRooms.apply(this,arguments);setTimeout(refreshRegisterButtons,0)};
+  const oldRenderPremium=window.renderPremiumPublicV27;window.renderPremiumPublicV27=function(){if(typeof oldRenderPremium==='function')oldRenderPremium.apply(this,arguments);setTimeout(refreshRegisterButtons,0)};
+
+  // Slot fixes: no forced 16 blank slots; add remove-last control; print odd/even as full flowing pages.
+  const slotToolbar=document.querySelector('#slotPage .slot-toolbar');
+  if(slotToolbar&&!$('removeSlotBtn')){const b=document.createElement('button');b.id='removeSlotBtn';b.type='button';b.textContent='➖ Remove Last Slot';b.onclick=()=>{let a=[];try{a=JSON.parse(localStorage.getItem('AKTan_Tournament_pointcalc_slots_v1')||'[]')}catch(e){}const last=a.length-1;if(last<0){return}if(a[last]&& !confirm('Remove the last slot containing a team?'))return;a.pop();while(a.length>0&&!String(a[a.length-1]||'').trim())a.pop();localStorage.setItem('AKTan_Tournament_pointcalc_slots_v1',JSON.stringify(a));if(typeof renderSlots==='function')renderSlots();};slotToolbar.insertBefore(b,slotToolbar.children[2]||null)}
+  const slotScript=[...document.scripts].find(s=>s.id==='slotPageScript');
+  if(slotScript){/* Keep the existing slot engine intact; this patch trims its stored list before rendering when possible. */}
+  function trimEmptySlotTail(){try{let a=JSON.parse(localStorage.getItem('AKTan_Tournament_pointcalc_slots_v1')||'[]');while(a.length>0&&!String(a[a.length-1]||'').trim())a.pop();if(a.length)localStorage.setItem('AKTan_Tournament_pointcalc_slots_v1',JSON.stringify(a));}catch(e){}}
+  document.addEventListener('click',e=>{if(e.target?.id==='hideFreeSlotsPrint')return},true);
+  const oldPrint=window.printSlotSeries;window.printSlotSeries=function(series){trimEmptySlotTail();if(typeof oldPrint==='function')oldPrint(series)};
+  // Auto-refresh room registration state every 15 seconds.
+  setInterval(()=>{normalizeRooms();refreshRegisterButtons();if(typeof populateRoomSelect==='function'&&document.getElementById('pubRegContest'))populateRoomSelect();},15000);
+  function boot(){normalizeRooms();injectRoomControls();injectUIDFields();refreshRegisterButtons()}
+  setTimeout(boot,100);setTimeout(boot,800);setTimeout(boot,1800);
+})();
+</script>
+<style id="AKTanRegistrationAndSlotFinalFixV12CSS">
+#publicRoomsCard #aktanCloseRegistration,#publicRoomsCard #aktanAutoApprove{accent-color:var(--accent,#ffb000)}
+#publicRoomsCard input:disabled,#publicRoomsCard select:disabled,#publicRoomsCard textarea:disabled,#publicRoomsCard button:disabled{opacity:.55;cursor:not-allowed}
+#pubRegister [id^="pubRegUID"]{width:100%;box-sizing:border-box;padding:9px;border-radius:8px;border:1px solid var(--line,#333);background:rgba(255,255,255,.04);color:inherit}
+@media print{
+  body.slot-printing:not(.slot-all-printing),body.slot-printing:not(.slot-all-printing) #slotPage,body.slot-printing:not(.slot-all-printing) #slotPage .slot-page-wrap{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
+  body.slot-printing:not(.slot-all-printing) #slotPage .slot-grid{break-inside:auto!important;page-break-inside:auto!important}
+  body.slot-printing:not(.slot-all-printing) #slotPage .slot-card{break-inside:avoid!important;page-break-inside:avoid!important}
+}
+</style>
 </body>
 </html>
 <style id="AKTanV14PodiumAndPosterFinalFix">
