@@ -3971,7 +3971,7 @@ window.previewOCRImages=function(e){
   function advanceRooms(){
     if(typeof ensureRooms!=='function')return;
     const rs=ensureRooms(),now=Date.now();let changed=false;
-    rs.forEach(r=>{if(!r||!r.autoAdvance||r.status==='Completed'||r.status==='Cancelled')return;const mins=Math.max(1,Math.min(1440,Number(r.advanceMinutes)||30)),step=mins*60000;let t=Date.parse(r.startAt||'');if(!Number.isFinite(t))return;if(now<t+step)return;const before=t;while(now>=t+step)t+=step;if(t!==before){r.startAt=localDateTime(t);changed=true;}});
+    rs.forEach(r=>{if(!r||!r.autoAdvance||r.status==='Completed'||r.status==='Cancelled')return;const mins=Math.max(1,Math.min(1440,Number(r.advanceMinutes)||30)),step=mins*60000;let t=Date.parse(r.startAt||'');if(!Number.isFinite(t))return;if(now<t+step)return;const before=t;if(now>=t){while(now>=t)t+=step;}if(t!==before){r.startAt=localDateTime(t);changed=true;}});
     if(changed){if(typeof syncSetupFromInputs==='function')syncSetupFromInputs();if(typeof renderAdminRooms==='function')renderAdminRooms();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof renderPublicApp==='function')renderPublicApp();if(window.__aktanRemoteAdminSession&&typeof publishPublicShare==='function'&&localStorage.getItem('AKTan_Public_Token_v1')){clearTimeout(window.__aktanRoomAdvanceSyncTimer);window.__aktanRoomAdvanceSyncTimer=setTimeout(()=>publishPublicShare(),120);}}
   }
   function boot(){injectAutoFields();advanceRooms()}
@@ -4023,10 +4023,22 @@ window.previewOCRImages=function(e){
   // UID fields for every player.
   function injectUIDFields(){
     for(let i=1;i<=5;i++){
-      const name=$('pubRegP'+i);if(!name||$('pubRegUID'+i))continue;
+      const name=$('pubRegP'+i);if(!name)continue;
       const wrap=name.parentElement;if(!wrap)continue;
-      const holder=document.createElement('div');holder.style.marginTop='7px';holder.innerHTML='<label>Player '+i+' UID *</label><input id="pubRegUID'+i+'" maxlength="20" inputmode="numeric" placeholder="Enter Player '+i+' UID">';wrap.appendChild(holder);
+      if(!$('pubRegUID'+i)){
+        const holder=document.createElement('div');holder.id='pubRegUIDWrap'+i;holder.style.marginTop='7px';holder.innerHTML='<label for="pubRegUID'+i+'">Player '+i+' UID *</label><input id="pubRegUID'+i+'" type="text" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="Enter Player '+i+' UID">';wrap.appendChild(holder);
+      }
     }
+    updateUIDVisibility();
+  }
+  function updateUIDVisibility(){
+    const r=roomV12($('pubRegContest')?.value||'');
+    const raw=String(r?.format||'').toLowerCase().replace(/\s+/g,'');
+    const mm=raw.match(/([1-4])v\1/);
+    const need=mm?Number(mm[1]):raw==='solo'?1:raw==='duo'?2:4;
+    for(let i=1;i<=5;i++){const w=$('pubRegUIDWrap'+i);if(w)w.style.display=i<=need?'block':'none';}
+    const p5=$('pubRegP5Wrap');if(p5&&need<5)p5.querySelector('label')?.replaceChildren(document.createTextNode('Substitute (optional)'));
+    const u5=$('pubRegUIDWrap5');if(u5&&need<5)u5.style.display='none';
   }
   function clearUIDs(){for(let i=1;i<=5;i++){const e=$('pubRegUID'+i);if(e)e.value='';}}
   function playerUIDs(need){const out=[];for(let i=1;i<=need;i++)out.push(($('pubRegUID'+i)?.value||'').trim());return out}
@@ -4059,15 +4071,24 @@ window.previewOCRImages=function(e){
   const oldPopulate=window.populateRoomSelect;
   window.populateRoomSelect=function(){if(typeof oldPopulate==='function')oldPopulate();injectUIDFields();const sel=$('pubRegContest');if(!sel)return;Array.from(sel.options).forEach(o=>{const r=roomV12(o.value);if(!r)return;const closed=registrationClosed(r);o.disabled=closed||o.disabled&&o.textContent.includes('FULL');if(closed)o.textContent=(r.title||'Room')+' — 🔒 REGISTRATION CLOSED';});const r=roomV12(sel.value);if(r&&registrationClosed(r)){sel.value='';if($('pubRegContestInfo'))$('pubRegContestInfo').textContent='Select another room. This room is closed for registration.';}}
   const oldSelected=window.publicRoomSelected;
-  window.publicRoomSelected=function(){if(typeof oldSelected==='function')oldSelected.apply(this,arguments);injectUIDFields();const r=roomV12($('pubRegContest')?.value||'');if(r&&registrationClosed(r)&&$('pubRegStatus'))$('pubRegStatus').textContent='🔒 Registration closed for this room.';};
+  window.publicRoomSelected=function(){if(typeof oldSelected==='function')oldSelected.apply(this,arguments);injectUIDFields();const r=roomV12($('pubRegContest')?.value||'');if(r&&registrationClosed(r)&&$('pubRegStatus'))$('pubRegStatus').textContent='🔒 Registration closed for this room.';updateUIDVisibility();};
 
   function refreshRegisterButtons(){
     document.querySelectorAll('[onclick*="registerForPublicRoom"]').forEach(btn=>{
-      const m=String(btn.getAttribute('onclick')||'').match(/registerForPublicRoom\(['"]([^'"]+)/);if(!m)return;const r=roomV12(m[1]);if(!r)return;const closed=registrationClosed(r);if(closed){btn.disabled=true;btn.textContent='🔒 Registration Closed';btn.title='Registration closes '+closeBefore(r)+' minutes before match start';}});
+      const m=String(btn.getAttribute('onclick')||'').match(/registerForPublicRoom\(['"]([^'"]+)/);if(!m)return;const r=roomV12(m[1]);if(!r)return;const closed=registrationClosed(r);const full=countApproved(r)>=Math.max(1,+r.maxSlots||1);btn.disabled=closed||full;btn.textContent=closed?'🔒 Registration Closed':(full?'🔒 Room Full':'📝 Register in this Room');btn.title=closed?'Registration closes '+closeBefore(r)+' minutes before match start':'';
+    });
   }
   const oldRenderApp=window.renderPublicApp;window.renderPublicApp=function(){if(typeof oldRenderApp==='function')oldRenderApp.apply(this,arguments);setTimeout(()=>{normalizeRooms();injectUIDFields();refreshRegisterButtons()},0)};
   const oldRenderRooms=window.renderPublicRooms;window.renderPublicRooms=function(){if(typeof oldRenderRooms==='function')oldRenderRooms.apply(this,arguments);setTimeout(refreshRegisterButtons,0)};
   const oldRenderPremium=window.renderPremiumPublicV27;window.renderPremiumPublicV27=function(){if(typeof oldRenderPremium==='function')oldRenderPremium.apply(this,arguments);setTimeout(refreshRegisterButtons,0)};
+
+  // Public-side auto advance: once the scheduled time passes, show the next slot immediately.
+  function advancePublicRooms(){
+    let changed=false,now=Date.now();
+    rooms().forEach(r=>{if(!r||!r.autoAdvance||r.status==='Completed'||r.status==='Cancelled')return;const step=Math.max(1,Math.min(1440,Number(r.advanceMinutes)||30))*60000;let t=Date.parse(r.startAt||'');if(!Number.isFinite(t)||now<t)return;while(now>=t)t+=step;r.startAt=localDateTime(t);changed=true;});
+    if(changed){normalizeRooms();populateRoomSelect();if(typeof renderPublicRooms==='function')renderPublicRooms();if(typeof renderPublicApp==='function')renderPublicApp();}
+  }
+  setTimeout(advancePublicRooms,100);setTimeout(advancePublicRooms,900);setInterval(advancePublicRooms,5000);
 
   // Slot fixes: no forced 16 blank slots; add remove-last control; print odd/even as full flowing pages.
   const slotToolbar=document.querySelector('#slotPage .slot-toolbar');
@@ -4079,7 +4100,7 @@ window.previewOCRImages=function(e){
   const oldPrint=window.printSlotSeries;window.printSlotSeries=function(series){trimEmptySlotTail();if(typeof oldPrint==='function')oldPrint(series)};
   // Auto-refresh room registration state every 15 seconds.
   setInterval(()=>{normalizeRooms();refreshRegisterButtons();if(typeof populateRoomSelect==='function'&&document.getElementById('pubRegContest'))populateRoomSelect();},15000);
-  function boot(){normalizeRooms();injectRoomControls();injectUIDFields();refreshRegisterButtons()}
+  function boot(){normalizeRooms();injectRoomControls();injectUIDFields();updateUIDVisibility();refreshRegisterButtons()}
   setTimeout(boot,100);setTimeout(boot,800);setTimeout(boot,1800);
 })();
 </script>
@@ -4087,6 +4108,7 @@ window.previewOCRImages=function(e){
 #publicRoomsCard #aktanCloseRegistration,#publicRoomsCard #aktanAutoApprove{accent-color:var(--accent,#ffb000)}
 #publicRoomsCard input:disabled,#publicRoomsCard select:disabled,#publicRoomsCard textarea:disabled,#publicRoomsCard button:disabled{opacity:.55;cursor:not-allowed}
 #pubRegister [id^="pubRegUID"]{width:100%;box-sizing:border-box;padding:9px;border-radius:8px;border:1px solid var(--line,#333);background:rgba(255,255,255,.04);color:inherit}
+#pubRegister [id^="pubRegUID"]{pointer-events:auto!important;position:relative!important;z-index:1002!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;cursor:text!important}
 @media print{
   body.slot-printing:not(.slot-all-printing),body.slot-printing:not(.slot-all-printing) #slotPage,body.slot-printing:not(.slot-all-printing) #slotPage .slot-page-wrap{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
   body.slot-printing:not(.slot-all-printing) #slotPage .slot-grid{break-inside:auto!important;page-break-inside:auto!important}

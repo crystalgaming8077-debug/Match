@@ -164,6 +164,34 @@ function makeToken(){return crypto.randomBytes(18).toString('base64url')}
 function makeKey(){return crypto.randomBytes(24).toString('base64url')}
 function origin(req){const proto=(req.headers['x-forwarded-proto']||'http').split(',')[0];const host=req.headers['x-forwarded-host']||req.headers.host||`localhost:${PORT}`;return `${proto}://${host}`;}
 
+function parseRoomTime(v){
+  const raw=String(v||'').trim();
+  if(!raw)return NaN;
+  // Room times are created from <input type="datetime-local"> in India.
+  // Treat timezone-less values as Asia/Kolkata wall-clock time.
+  return Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw)?raw:raw+'+05:30');
+}
+function roomLocalDateTime(ms){
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ms));
+  const o={}; for(const p of parts) if(p.type!=='literal') o[p.type]=p.value;
+  return `${o.year}-${o.month}-${o.day}T${o.hour}:${o.minute}`;
+}
+function advanceAutoRooms(state,now=Date.now()){
+  if(!state||!Array.isArray(state.publicContests))return false;
+  let changed=false;
+  for(const r of state.publicContests){
+    if(!r||!r.autoAdvance||r.status==='Completed'||r.status==='Cancelled')continue;
+    const mins=Math.max(1,Math.min(1440,Number(r.advanceMinutes)||30));
+    const step=mins*60000;
+    let t=parseRoomTime(r.startAt);
+    if(!Number.isFinite(t)||now<t)continue;
+    const before=t;
+    while(now>=t)t+=step;
+    if(t!==before){r.startAt=roomLocalDateTime(t);changed=true;}
+  }
+  return changed;
+}
+
 async function initStore(){
   if(process.env.DATABASE_URL){
     try{
@@ -219,7 +247,7 @@ const server=http.createServer(async (req,res)=>{
     }
     let m=u.pathname.match(/^\/api\/public\/([^/]+)\/state$/);
     if(m){const pub=await getPub(m[1]);if(!pub)return json(res,404,{error:'Public tournament not found'});
-      if(req.method==='GET')return json(res,200,{state:publicState(pub),updatedAt:pub.updatedAt});
+      if(req.method==='GET'){const changed=advanceAutoRooms(pub.state);if(changed){pub.updatedAt=Date.now();await updatePub(pub);}return json(res,200,{state:publicState(pub),updatedAt:pub.updatedAt});}
       if(req.method==='PUT'){if(!auth(pub,req))return json(res,403,{error:'Invalid admin key'});const b=await readBody(req),state=safeState(b.state);if(!state)return json(res,400,{error:'Invalid state'});if(b.adminPassword!==undefined&&String(b.adminPassword).length)state._aktanAdminPasswordHash=passwordHash(b.adminPassword);else if(pub.state&&pub.state._aktanAdminPasswordHash)state._aktanAdminPasswordHash=pub.state._aktanAdminPasswordHash;pub.state=state;pub.updatedAt=Date.now();await updatePub(pub);return json(res,200,{ok:true,updatedAt:pub.updatedAt});}
     }
     m=u.pathname.match(/^\/api\/public\/([^/]+)\/admin-login$/);
@@ -238,11 +266,12 @@ const server=http.createServer(async (req,res)=>{
       const token=m[1];
       const pub=await getPub(token);if(!pub)return json(res,404,{error:'Public tournament not found'});const b=await readBody(req);
       const cfg=Object.assign({mode:'squad',logo:true,team:true,players:true,phone:true},pub.state.publicRegistration||{});
+      if(advanceAutoRooms(pub.state)){pub.updatedAt=Date.now();await updatePub(pub);}
       const contestId=clean(b.contestId,80);
       const contests=Array.isArray(pub.state.publicContests)?pub.state.publicContests:[];
       const contest=contestId?contests.find(x=>String(x.id)===contestId):null;
       if(contests.length && !contest)return json(res,400,{error:'Please select a valid contest / room'});
-      if(contest){const max=Math.max(1,Math.min(1000,+contest.maxSlots||1));const approved=(pub.state.teams||[]).filter(t=>String(t.contestId||'')===contestId).length;const pending=pub.registrations.filter(r=>String(r.contestId||'')===contestId).length;if(approved+pending>=max)return json(res,409,{error:'This room is full. Please choose another room'});const closeOn=contest.closeRegistration!==false;const before=Math.max(0,Math.min(1440,Number(contest.closeRegistrationBeforeMinutes??5)||5));const start=Date.parse(contest.startAt||'');if(closeOn&&Number.isFinite(start)&&Date.now()>=start-before*60000)return json(res,409,{error:'Registration is closed. This room closes '+before+' minutes before match start.'});if(contest.status==='Completed'||contest.status==='Cancelled'||contest.status==='Live')return json(res,409,{error:'Registration is closed for this room.'});}
+      if(contest){const max=Math.max(1,Math.min(1000,+contest.maxSlots||1));const approved=(pub.state.teams||[]).filter(t=>String(t.contestId||'')===contestId).length;const pending=pub.registrations.filter(r=>String(r.contestId||'')===contestId).length;if(approved+pending>=max)return json(res,409,{error:'This room is full. Please choose another room'});const closeOn=contest.closeRegistration!==false;const before=Math.max(0,Math.min(1440,Number(contest.closeRegistrationBeforeMinutes??5)||5));const start=parseRoomTime(contest.startAt);if(closeOn&&Number.isFinite(start)&&Date.now()>=start-before*60000)return json(res,409,{error:'Registration is closed. This room closes '+before+' minutes before match start.'});if(contest.status==='Completed'||contest.status==='Cancelled'||contest.status==='Live')return json(res,409,{error:'Registration is closed for this room.'});}
       const rawFmt=String(contest?.format||'').trim().toLowerCase().replace(/\s+/g,'');
       const fmt=rawFmt.replace(/[^a-z0-9v\/]/g,'');
       const team=clean(b.team,40),captain=clean(b.captain,40),phone=clean(b.phone,20),logo=typeof b.logo==='string'&&b.logo.startsWith('data:image/')?b.logo.slice(0,1500000):'',players=Array.isArray(b.players)?b.players.slice(0,5).map(x=>clean(x,40)):[],playerUIDs=Array.isArray(b.playerUIDs)?b.playerUIDs.slice(0,5).map(x=>clean(x,20)):[];
